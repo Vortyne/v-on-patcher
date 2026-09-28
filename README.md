@@ -761,16 +761,22 @@ To change the machine code the patches install, see [asm/](asm/);
 `asm/build.py` builds it into the hex strings in `v-on-patcher.py`. Never edit
 those by hand.
 
-## AI Disclaimer
+## AI disclaimer
 
-LLMs are part of the toolchain here, alongside Ghidra, gdb and winedbg on
-the running game, Cheat Engine and Unicorn. The scope, the disc dumps, the
-testing and the debugging are human. Every change is read before it goes
-in and played on all four builds before it ships. Offsets and bytes are
-verified against the original before anything is written, and the patcher
-refuses any file that is not an unmodified build it has tables for. It is
-still a hobby project poking at a nearly 30-year-old binary, so expect
-bugs.
+LLMs are part of the toolchain here: much of the assembly and the
+documentation was written with one. The reverse engineering was not. The
+addresses and the behaviour each patch relies on come from tracing and
+debugging the running game with Ghidra, gdb, winedbg, Cheat Engine and
+Unicorn, and the LLM writes to that brief. The scope, the disc dumps, the
+testing and the debugging are human. The patcher edits the game's own
+files and adds its code beside them; it is not a reimplementation of the
+game.
+
+Every change is read line by line before it goes in, and every patch is
+played on all four builds before it ships. Offsets and bytes are verified
+against the originals before anything is written, and the patcher refuses
+any file that is not an unmodified build it has tables for. It is still a
+hobby project poking at a nearly 30-year-old binary, so expect bugs.
 
 ## Credits and licence
 
