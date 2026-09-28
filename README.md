@@ -45,8 +45,8 @@ forwarding.
 **Download** `v-on-patcher-*-win.zip` from the
 [latest release](https://github.com/pairomaniac/v-on-patcher/releases/latest),
 unzip it anywhere and run `v-on-patcher-*.exe`; the `_internal` folder beside it
-has to stay. It is unsigned, so SmartScreen calls it an unknown publisher the
-first time you run it. If a virus scanner objects, see
+has to stay. The exe is signed, but SmartScreen can still warn about a new
+release for a while. If a virus scanner objects, see
 [Virus warnings](#virus-warnings). On Linux, see
 [Running the Python script](#running-the-python-script).
 
@@ -80,16 +80,22 @@ Restore leave them alone.
 
 ## Virus warnings
 
-Defender and other scanners sometimes flag the download. It is a false
-positive: an unsigned program that edits another program is the sort of
-thing they warn about. To allow it in Defender: Windows Security → Virus &
+The exe is signed from 0.17.1 on with a Certum open-source code signing
+certificate. To check it, open the exe's Properties → Digital Signatures:
+the signature is issued by *Certum Code Signing 2021 CA*.
+
+Defender and other scanners can still flag the download. It is a false
+positive: a program that edits another program is the sort of thing they
+warn about. A detection ending in `!ml`, such as
+`Trojan:Win32/Wacatac.B!ml`, is a machine-learning guess, not a match for
+anything known. To allow it in Defender: Windows Security → Virus &
 threat protection → Protection history → the entry for the file → Allow,
 then run it again.
 
 If you would rather not run it, `v-on-patcher.py` does everything the download
 does - see [Running the Python script](#running-the-python-script). Each
-release is built on GitHub from this repository, and the build log lists the
-file's checksum if you want to check that yours matches.
+release is built and signed on GitHub from this repository, and the build
+log lists the signed exe's checksum if you want to check that yours matches.
 
 ## Installing from a disc image
 
@@ -707,7 +713,7 @@ draws the title prompt as scrambled letters.
 
 The patcher is one Python script, `v-on-patcher.py`; the Windows download is
 that script frozen into an exe. On Linux, or if you would rather not run
-an unsigned exe, run the script itself. Two ways to get it:
+the exe, run the script itself. Two ways to get it:
 
 - `v-on-patcher-*-python.zip` from the
   [latest release](https://github.com/pairomaniac/v-on-patcher/releases/latest):

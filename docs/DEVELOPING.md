@@ -368,15 +368,17 @@ notes.md` makes the tag, and the tag build only attaches the zips.
 CI runs `verify` (ubuntu) and, only if it passes, `windows`, which stamps the
 version, installs PyInstaller from source with its bootloader compiled on the
 runner, builds `dist/v-on-patcher/` (the exe with its `_internal/` folder: the
-runtime, the libraries, `dpctrl.dll`), checks the bundle, runs `--selfcheck`
-on the exe, prints its checksum and VirusTotal link, and attaches two zips to
-the release: `v-on-patcher-vX.Y.Z-win.zip`, the folder with the exe at its top,
-and `v-on-patcher-vX.Y.Z-python.zip`, the LF-normalised script with
-`net/dpctrl.dll`.
+runtime, the libraries, `dpctrl.dll`), checks the bundle and runs
+`--selfcheck` on the exe. On a tag, `sign` then signs the exe and `release`
+attaches two zips to the release: `v-on-patcher-vX.Y.Z-win.zip`, the folder
+with the exe at its top, and `v-on-patcher-vX.Y.Z-python.zip`, the
+LF-normalised script with `net/dpctrl.dll` (see [Signing](#signing)). A push
+that is not a tag builds the same two zips, unsigned, as an artifact.
 
-The exe is unsigned, and scanners have opinions about an unsigned program
-that edits another program. Before announcing: upload the exe from the win
-zip to VirusTotal once, and submit it to Microsoft as a false positive
+Scanners still have opinions about a program that edits another program,
+signed or not. Before announcing: upload the exe from the win zip to
+VirusTotal once (the `sign` job's log has its checksum and lookup link),
+and if Defender flags it, submit it to Microsoft as a false positive
 (Security Intelligence, as a developer, repository in the notes). The
 verdict usually clears within a day. Do not reanalyze on VirusTotal while
 it is still flagged; detections feed each other. The README's *Virus
@@ -420,6 +422,80 @@ git tag -d v0.8.4
 git push --delete origin v0.8.4
 gh release delete v0.8.4 --yes     # if a release was created
 # fix, re-tag
+```
+
+Re-tagging builds and signs again.
+
+### Signing
+
+A tag build runs three jobs after `verify`:
+
+1. `windows` builds the exe and hands it over unzipped, as an artifact
+   named `unsigned` that expires after a day.
+2. `sign` signs the exe on Linux with
+   [ssign](https://github.com/Le-Syl21/ssign) and a Certum open-source
+   code signing certificate. It checks the signature and its timestamp
+   with `osslsigncode verify`, prints the signed exe's checksum, and zips
+   both packages with `tools/package.py`.
+3. `release` uploads the zips to the release page.
+
+Only `release` can write to the repository, and only `sign` can read the
+signing secrets. `dpctrl.dll` is not signed: the patcher compares it with
+`NETPLAY_DLL_SHA` to tell its own build from an older one, so signing it
+would mean signing before the commit and updating that hash.
+
+The certificate is Certum's "Code Signing in the cloud": the private key
+stays on Certum's servers and signing is a request to them, logged in
+with the account's e-mail and a one-time code from the SimplySign phone
+app. ssign does that login and request itself; it is built from a pinned
+commit, and moving the pin is a change to review like any other. The
+timestamp keeps a signature valid after the one-year certificate
+expires.
+
+### Setting up signing
+
+Once, and again whenever the certificate or its QR code is renewed:
+
+1. **Get the `otpauth://` URI.** The QR code the SimplySign app scanned
+   holds it. Decode the image locally, never with an online reader, since
+   the URI can sign as the certificate's owner:
+
+   ```bash
+   zbarimg --raw qr.png
+   ```
+
+   The output is one line starting `otpauth://totp/`. Delete the image
+   afterwards.
+
+2. **Create the `signing` environment** in the repository's Settings →
+   Environments. Environments belong to one repository, so sr2-patcher's
+   does not count here:
+   - *Deployment branches and tags*: selected branches and tags, one rule
+     of type Tag with the pattern `v*`.
+   - *Environment secrets* (not repository secrets): `CERTUM_EMAIL`, the
+     SimplySign account's e-mail, and `CERTUM_OTP`, the whole
+     `otpauth://` URI.
+   - *Required reviewers*, optional: with one set, each tag's `sign` job
+     waits on the run's page until it is approved under **Review
+     deployments**. Without, tags sign unattended.
+
+3. **Tag a release** as above and check the `sign` job: its *Verify* step
+   ends with `Signature verification: ok`.
+
+4. **Check the exe on Windows**: Properties → Digital Signatures lists
+   the signer, issued by *Certum Code Signing 2021 CA*, with a Certum
+   timestamp.
+
+If the URI leaks, re-issue the QR code in Certum's SimplySign account,
+scan it into the app again and replace `CERTUM_OTP` in every repository
+that has it. A renewed certificate needs nothing else changed: ssign
+fetches the certificate from the account at every signing.
+
+To sign a file by hand, without the workflow, run ssign with the current
+code from the phone app instead of the URI:
+
+```bash
+ssign -e <account e-mail> -T <code> v-on-patcher-X.Y.Z.exe
 ```
 
 ## What catches what

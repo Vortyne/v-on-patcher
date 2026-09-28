@@ -15,7 +15,7 @@ table (NOTES.md, *The builds*).
 | `asm/` | assembly sources for the blobs, `build.py` links them into `v-on-patcher.py` |
 | `asm/ui.asm` | the widescreen blob, built separately by `tools/uibuild.py` |
 | `net/` | `dpctrl.c` the netplay DLL, `rendezvous.py` the matchcode server |
-| `tools/` | the checks (`check.py` runs them all), the generators (`uibuild`, `hiresport`, `assets`, `map`) and the by-hand tools |
+| `tools/` | the checks (`check.py` runs them all), the generators (`uibuild`, `hiresport`, `assets`, `map`), the by-hand tools, and `package.py`, which CI uses to zip a build into the two release zips |
 | `maps/` | per-build function maps and port tables, from `tools/maps.sh` |
 | `docs/` | this and the other documents; `docs/README.md` is the index |
 | `.github/workflows/build.yml` | CI: the checks, the two zips, the release |
