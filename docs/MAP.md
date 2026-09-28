@@ -11,14 +11,14 @@ table (NOTES.md, *The builds*).
 | Path | What |
 | --- | --- |
 | `v-on-patcher.py` | the patcher: tables, blobs, installer, ripper, netplay setup, window, CLI |
-| `v-on-patcher.spec` | PyInstaller spec for the Windows exe |
 | `asm/` | assembly sources for the blobs, `build.py` links them into `v-on-patcher.py` |
 | `asm/ui.asm` | the widescreen blob, built separately by `tools/uibuild.py` |
 | `net/` | `dpctrl.c` the netplay DLL, `rendezvous.py` the matchcode server |
-| `tools/` | the checks (`check.py` runs them all), the generators (`uibuild`, `hiresport`, `assets`, `map`), the by-hand tools, and `package.py`, which CI uses to zip a build into the two release zips |
+| `tools/` | the checks (`check.py` runs them all), the generators (`uibuild`, `hiresport`, `assets`, `map`), the by-hand tools, `bundle.py`, which assembles the Windows release's `_internal/`, and `package.py`, which CI uses to zip a build into the two release zips |
+| `launcher/` | the Windows release's `v-on-patcher.exe`: `launcher.c` runs `_internal\pythonw.exe _internal\v-on-patcher.py` and reports a crash, `build.bat` compiles it with MSVC, and `v-on-patcher.exe`, when present, is the signed copy every release ships |
 | `maps/` | per-build function maps and port tables, from `tools/maps.sh` |
 | `docs/` | this and the other documents; `docs/README.md` is the index |
-| `.github/workflows/build.yml` | CI: the checks, the two zips, the release |
+| `.github/workflows/build.yml` | CI: the checks, the two zips, signing, the release |
 
 ## 2. `v-on-patcher.py`
 
@@ -39,10 +39,10 @@ is stale, so the line numbers are current.
 | 5414–5823 | banner and credit bitmaps, tile expansion | `LEVERS_CODE = link('LEVERS',` |
 | 5824–6543 | the patch table: `FEATURES`, `BY_KEY`, labels, tips, apply order | `FEATURES = [` |
 | 6544–7391 | ripping (`RAW = 2352`) and installing (`LOGICAL = 2048`) | `# --- ripping --------------` |
-| 7392–8221 | netplay setup, `SYNC_SITES`, cnc-ddraw, CD audio | `# --- netplay --------------` |
-| 8222–8705 | `Patcher`: reading a file, applying, restoring | `class Patcher:` |
-| 8706–9273 | the logo and icon (`tools/assets.py`), then the window strings | `# ASSETS BLOB BEGIN - tools/` |
-| 9274–11274 | the window (`run_tk`), the CLI, `main` | `def run_tk():` |
+| 7392–8218 | netplay setup, `SYNC_SITES`, cnc-ddraw, CD audio | `# --- netplay --------------` |
+| 8219–8702 | `Patcher`: reading a file, applying, restoring | `class Patcher:` |
+| 8703–9270 | the logo and icon (`tools/assets.py`), then the window strings | `# ASSETS BLOB BEGIN - tools/` |
+| 9271–11271 | the window (`run_tk`), the CLI, `main` | `def run_tk():` |
 <!-- REGIONS END -->
 
 ## 3. `v_on.exe`

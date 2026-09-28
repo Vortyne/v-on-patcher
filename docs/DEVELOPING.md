@@ -7,8 +7,8 @@ using the patcher see [README.md](../README.md); for what the patches do see
 ## The four layers
 
 ```
-asm/*.asm    ──nasm──►  hex strings in v-on-patcher.py  ──PyInstaller──►  v-on-patcher-X.Y.Z-win.zip
-net/dpctrl.c ──mingw─►  net/dpctrl.dll                     CI builds this  (exe + _internal/)
+asm/*.asm    ──nasm──►  hex strings in v-on-patcher.py  ──CI──►  v-on-patcher-X.Y.Z-win.zip
+net/dpctrl.c ──mingw─►  net/dpctrl.dll                           (exe + _internal/)
   you edit             asm/build.py, net/build.py
                        write these
 ```
@@ -16,7 +16,7 @@ net/dpctrl.c ──mingw─►  net/dpctrl.dll                     CI builds thi
 `v-on-patcher.py` cannot read `asm/` at runtime, so the machine code is baked in
 as text between marker comments; `asm/build.py` is the only thing that puts
 it there. The netplay DLL is a file, `net/dpctrl.dll`, that `net/build.py`
-compiles and the release ships beside the exe.
+compiles and the release ships beside the script.
 
 **Never edit a blob by hand.** The next build run silently discards it.
 
@@ -37,7 +37,7 @@ needs pip. The script checks and prints; the actual install is one `apt` or
 
 `nasm` is needed only to rebuild `asm/`, `asm/ui.asm` included, mingw only
 to rebuild the netplay DLL. Neither is needed to run the patcher or to
-build the exe: the machine code is in `v-on-patcher.py` as text, the DLL is
+build the Windows release: the machine code is in `v-on-patcher.py` as text, the DLL is
 committed as `net/dpctrl.dll`.
 
 `python3-pyflakes` is the `lint` check; `python3-capstone` (4.x or 5.x)
@@ -341,9 +341,9 @@ at a live server, the flood aside.
 ## Releasing
 
 The version comes from the tag and nowhere else. `VERSION = 'dev'` stays in
-the source; the workflow rewrites that line during the build, and everything
-else - the spec, the exe name, the file properties, the window title,
-`--version`, the title-screen line - reads it from there. Nothing to bump.
+the source; the workflow rewrites that line during the build, and the
+window title, `--version`, the title-screen line and the zip names read it
+from there. Nothing to bump.
 
 The title-screen line is the one thing the patcher writes that is not the same
 for everyone, so it is written after the patch table rather than from it and
@@ -366,23 +366,23 @@ generated-notes step below: `gh release create v0.8.4 --notes-file
 notes.md` makes the tag, and the tag build only attaches the zips.
 
 CI runs `verify` (ubuntu) and, only if it passes, `windows`, which stamps the
-version, installs PyInstaller from source with its bootloader compiled on the
-runner, builds `dist/v-on-patcher/` (the exe with its `_internal/` folder: the
-runtime, the libraries, `dpctrl.dll`), checks the bundle and runs
-`--selfcheck` on the exe. On a tag, `sign` then signs the exe and `release`
-attaches two zips to the release: `v-on-patcher-vX.Y.Z-win.zip`, the folder
-with the exe at its top, and `v-on-patcher-vX.Y.Z-python.zip`, the
-LF-normalised script with `net/dpctrl.dll` (see [Signing](#signing)). A push
-that is not a tag builds the same two zips, unsigned, as an artifact.
+version and builds `dist/v-on-patcher/`: the exe with its `_internal/`
+folder (see [The Windows build](#the-windows-build)). On a tag, `sign`
+signs the exe if it is not signed already and `release` attaches two zips
+to the release: `v-on-patcher-vX.Y.Z-win.zip`, the folder with the exe at
+its top, and `v-on-patcher-vX.Y.Z-python.zip`, the LF-normalised script
+with `net/dpctrl.dll` (see [Signing](#signing)). A push that is not a tag
+builds the same two zips as an artifact. Its exe is the committed
+launcher, or an unsigned fresh one when none is committed.
 
-Scanners still have opinions about a program that edits another program,
-signed or not. Before announcing: upload the exe from the win zip to
-VirusTotal once (the `sign` job's log has its checksum and lookup link),
-and if Defender flags it, submit it to Microsoft as a false positive
-(Security Intelligence, as a developer, repository in the notes). The
-verdict usually clears within a day. Do not reanalyze on VirusTotal while
-it is still flagged; detections feed each other. The README's *Virus
-warnings* section tells users how to allow it in Defender meanwhile.
+The exe is the same file in every release until the launcher changes, so
+it needs checking only then: upload it to VirusTotal once (the `sign`
+job's log has its checksum and lookup link), and if Defender flags it,
+submit it to Microsoft as a false positive (Security Intelligence, as a
+developer, repository in the notes). The verdict usually clears within a
+day. Do not reanalyze on VirusTotal while it is still flagged; detections
+feed each other. The README's *Virus warnings* section tells users how to
+allow it in Defender meanwhile.
 
 `--generate-notes` writes the release body from commit subjects, which for a
 squashed history is close to useless. Replace it once CI is green:
@@ -424,23 +424,28 @@ gh release delete v0.8.4 --yes     # if a release was created
 # fix, re-tag
 ```
 
-Re-tagging builds and signs again.
+Re-tagging builds again; it signs only when no launcher is committed.
 
 ### Signing
 
 A tag build runs three jobs after `verify`:
 
-1. `windows` builds the exe and hands it over unzipped, as an artifact
-   named `unsigned` that expires after a day.
-2. `sign` signs the exe on Linux with
+1. `windows` builds the release and hands it over unzipped, as an
+   artifact named `unsigned` that expires after a day.
+2. `sign` signs the exe, the launcher, on Linux with
    [ssign](https://github.com/Le-Syl21/ssign) and a Certum open-source
-   code signing certificate. It checks the signature and its timestamp
-   with `osslsigncode verify`, prints the signed exe's checksum, and zips
-   both packages with `tools/package.py`.
+   code signing certificate. A launcher committed signed is left as it
+   is (*The committed launcher*, below). It checks the signature and its
+   timestamp with `osslsigncode verify`, prints the signed exe's
+   checksum, and zips both packages with `tools/package.py`.
 3. `release` uploads the zips to the release page.
 
+With a launcher committed, a tag signs nothing: the secrets are used only
+for a release that changes the launcher.
+
 Only `release` can write to the repository, and only `sign` can read the
-signing secrets. `dpctrl.dll` is not signed: the patcher compares it with
+signing secrets. The Python files in `_internal` carry the Python
+Software Foundation's signatures. `dpctrl.dll` is not signed: the patcher compares it with
 `NETPLAY_DLL_SHA` to tell its own build from an older one, so signing it
 would mean signing before the commit and updating that hash.
 
@@ -479,8 +484,9 @@ Once, and again whenever the certificate or its QR code is renewed:
      waits on the run's page until it is approved under **Review
      deployments**. Without, tags sign unattended.
 
-3. **Tag a release** as above and check the `sign` job: its *Verify* step
-   ends with `Signature verification: ok`.
+3. **Check the next signing.** A tag signs only when no launcher is
+   committed (*The committed launcher*, below). In that tag's `sign`
+   job, the *Verify* step ends with `Signature verification: ok`.
 
 4. **Check the exe on Windows**: Properties → Digital Signatures lists
    the signer, issued by *Certum Code Signing 2021 CA*, with a Certum
@@ -495,8 +501,63 @@ To sign a file by hand, without the workflow, run ssign with the current
 code from the phone app instead of the URI:
 
 ```bash
-ssign -e <account e-mail> -T <code> v-on-patcher-X.Y.Z.exe
+ssign -e <account e-mail> -T <code> v-on-patcher.exe
 ```
+
+### The Windows build
+
+The Windows release is Python as python.org ships it, unpacked, with a
+small exe to start it:
+
+- `_internal/` holds `pythonw.exe` and `python.exe`, their DLLs and
+  Tcl/Tk, the standard library compiled into `python312.zip`, certifi,
+  the stamped script as `v-on-patcher.py`, and `net/dpctrl.dll`.
+  `tools/bundle.py` copies it out of the Python it runs under.
+  `python312._pth` limits that Python to what it lists, so nothing from
+  an installed Python or `PYTHONPATH` gets in.
+- `v-on-patcher.exe` beside it is the launcher, `launcher/launcher.c`. It
+  runs `_internal\pythonw.exe _internal\v-on-patcher.py` with its own
+  arguments and returns the exit code. Python's stderr goes to a
+  temporary file. If Python exits with an error and wrote to it, the
+  launcher shows the text in a message box, or copies it to its own
+  stderr when that is a file or a pipe.
+
+It is not PyInstaller because scanners match on PyInstaller's
+bootloader and packed archive.
+
+To build it by hand on Windows, with certifi installed and a Visual
+Studio C++ toolset:
+
+    python tools/bundle.py dist\v-on-patcher
+    launcher\build.bat %CD%\dist\v-on-patcher\v-on-patcher.exe
+
+The `windows` job does the same on every push to main and on a tag, after
+`verify`. It uses Python 3.12.10, pinned so each release ships the same
+files, and checks that the bundle has what the patcher needs. Then it
+runs `--selfcheck` through the launcher, opens Tk with the bundled
+Python, and checks that a script that raises comes back as a failure
+with its traceback.
+
+### The committed launcher
+
+A release ships `launcher/v-on-patcher.exe`, a signed launcher committed
+to the repository, not the one the job compiles. Scanners and SmartScreen
+judge a file by its hash, so an unchanged exe keeps its reputation and
+one Microsoft submission covers every release. The job still compiles
+the launcher so the source stays buildable.
+
+To change the launcher:
+
+1. Change `launcher/`, raise the version in `launcher.rc`, and delete
+   `launcher/v-on-patcher.exe`, in one commit.
+2. Tag a release. With no committed launcher, the job ships the one it
+   compiled and `sign` signs it.
+3. Take `v-on-patcher.exe` out of that release's `-win.zip` and commit it
+   as `launcher/v-on-patcher.exe`.
+
+The `verify` job fails if the committed launcher is not validly signed,
+or was committed before the last change to `launcher/launcher.c`,
+`launcher.rc`, `build.bat` or `assets/icon.ico`.
 
 ## What catches what
 
@@ -507,6 +568,7 @@ ssign -e <account e-mail> -T <code> v-on-patcher-X.Y.Z.exe
 | moved a blob's site, left its address behind | `asm` | CI, every push |
 | ran a build, forgot to commit | `tree` | CI, every push |
 | dpctrl.c stopped exporting something | mingw build step | CI, every push |
+| changed `launcher/`, left the old exe committed | `Committed launcher` step | CI, every push |
 | reordered a site list | `tables` | CI, every push |
 | two patches on one byte | `tables` | CI, every push |
 | typo'd an offset | `offsets` | **only if you run it** |

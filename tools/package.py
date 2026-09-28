@@ -3,12 +3,12 @@
 
     python3 tools/package.py DIST NAME
 
-DIST holds what the windows job leaves: v-on-patcher/ (the exe and
-_internal/), v-on-patcher-<version>.py and dpctrl.dll. Writes
-DIST/NAME-win.zip, with the exe and _internal/ at its top, and
-DIST/NAME-python.zip, with the script and net/dpctrl.dll. The windows job
-runs it for an unsigned build, the sign job after signing the exe, so both
-zips have one layout.
+DIST holds what the windows job leaves: v-on-patcher/ (the launcher,
+v-on-patcher.exe, and _internal/), v-on-patcher-<version>.py and
+dpctrl.dll. Writes DIST/NAME-win.zip, with the exe and _internal/ at its
+top, and DIST/NAME-python.zip, with the script and net/dpctrl.dll. The
+windows job runs it for an unsigned build, the sign job after signing,
+so both zips have one layout.
 """
 import os
 import sys

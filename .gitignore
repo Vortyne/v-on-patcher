@@ -1,4 +1,4 @@
-# PyInstaller writes both of these next to the spec.
+# The workflow writes these: the compiled launcher, and the release.
 build/
 dist/
 
