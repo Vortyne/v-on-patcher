@@ -117,11 +117,11 @@ jobs:
 
       # What this job cannot do is touch a real copy of the game, so the
       # checks that need one are skipped here. Run them by hand before
-      # tagging, once per build - each runs against every folder given and
-      # is named by build, because a table can only be wrong on the build
-      # it is for:
+      # tagging, once per build - each runs against every folder in
+      # ~/.vo-test and is named by build, because a table can only be
+      # wrong on the build it is for:
       #
-      #     python3 tools/check.py RETAIL/ OEM/ JP/ JPRE/
+      #     python3 tools/check.py
       #
       # offsets  the only check that catches a wrong offset
       # banner   the only check that proves the title prompt reads back as

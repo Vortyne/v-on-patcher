@@ -93,15 +93,18 @@ still a script of its own; the runner only decides what to run, so CI and you
 cannot drift apart.
 
 ```bash
-python3 tools/check.py                        # the ones CI can run
-python3 tools/check.py /path/to/VIRTUAL-ON    # and the ones that need the game
-python3 tools/check.py RETAIL/ OEM/ JP/ JPRE/ # those once per build
+python3 tools/check.py                        # everything, every build in ~/.vo-test
+python3 tools/check.py /path/to/VIRTUAL-ON    # the game checks on this folder instead
+python3 tools/check.py RETAIL/ OEM/ JP/ JPRE/ # or on these
 python3 tools/check.py --list                 # what they are
 python3 tools/check.py --only asm,net         # just those
 ```
 
-`VO_GAME` works instead of one argument, and either a folder or any file
-inside one will do. The checks that need the game run once per folder
+`~/.vo-test` is yours and not in the repository; `tools/vo-test.example`
+is its template. It names the game folder of each build
+(`VO_GAME_RETAIL`, `VO_GAME_OEM`, `VO_GAME_JP`, `VO_GAME_JPRE`). Folders
+on the command line come first, then `VO_GAME` from the environment, then
+the file. A folder or any file inside one will do. The checks that need the game run once per folder
 given and are named by build - `offsets/jpre` - because a table can only be
 wrong on the build it is for; before tagging, give all four.
 
@@ -274,16 +277,9 @@ A patch that only changes what a machine shows, or how it reads its own
 controls, stays out: those are each player's own business.
 
 Two scripts under `tools/` build the DLL and put it in a game folder. Both
-read `~/.vo-test`, which is yours and is not in the repository:
-
-```bash
-# ~/.vo-test
-VO_GAME=/path/to/VIRTUAL-ON           # vo-dll.sh
-VO_GAME_A=/path/to/VIRTUAL-ON         # vo-loopback.sh
-VO_GAME_B=/path/to/VIRTUAL-ON-P2
-VO_PFX_A=$HOME/prefixes/virtual-on
-VO_PFX_B=$HOME/prefixes/virtual-on-p2
-```
+read `~/.vo-test` (*The checks*, above). `vo-dll.sh` installs into
+`VO_GAME`, or `VO_GAME_RETAIL` when that is unset; `vo-loopback.sh` uses
+`VO_GAME_A`, `VO_GAME_B`, `VO_PFX_A` and `VO_PFX_B`.
 
 `tools/vo-dll.sh` is for testing against another machine:
 
@@ -352,7 +348,7 @@ per release.
 
 ```bash
 git pull
-python3 tools/check.py RETAIL/ OEM/ JP/ JPRE/ # everything, nothing skipped
+python3 tools/check.py     # every build in ~/.vo-test, nothing skipped
 
 git tag v0.8.4
 git push && git push --tags

@@ -1,10 +1,15 @@
 #!/usr/bin/env python3
 """Run every check in the project.
 
-    python3 tools/check.py                       # everything that needs no game
-    python3 tools/check.py /path/to/VIRTUAL-ON   # and the ones that do
-    python3 tools/check.py RETAIL/ OEM/ JP/ JPRE/      # once per build
+    python3 tools/check.py                       # every build in ~/.vo-test
+    python3 tools/check.py /path/to/VIRTUAL-ON   # this folder instead
+    python3 tools/check.py RETAIL/ OEM/ JP/ JPRE/      # these, once per build
     VO_GAME=/path/to/VIRTUAL-ON python3 tools/check.py
+
+~/.vo-test (template: tools/vo-test.example) names the game folder per
+build: VO_GAME_RETAIL, VO_GAME_OEM, VO_GAME_JP and VO_GAME_JPRE. Folders
+on the command line come first, then VO_GAME from the environment, then
+the file.
 
 The game is not in the repository, so CI can only run the first form. The
 checks that need a real copy are skipped rather than failed when no game is
@@ -28,6 +33,25 @@ import time
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 PY = sys.executable or 'python3'
+CONF = os.path.expanduser('~/.vo-test')
+BUILDS = ('RETAIL', 'OEM', 'JP', 'JPRE')
+
+
+def config():
+    """KEY=VALUE lines of ~/.vo-test, quotes and ~ resolved."""
+    out = {}
+    if not os.path.isfile(CONF):
+        return out
+    with open(CONF) as fh:
+        for line in fh:
+            line = line.strip()
+            if not line or line.startswith('#') or '=' not in line:
+                continue
+            key, value = line.split('=', 1)
+            key = key.replace('export ', '').strip()
+            value = value.strip().strip('"\'')
+            out[key] = os.path.expanduser(value.replace('$HOME', '~'))
+    return out
 
 
 def colours(force=None):
@@ -90,6 +114,11 @@ def find_games(args):
     pointing at the wrong copy looks exactly like pointing at the right one."""
     given = args or ([os.environ['VO_GAME']] if os.environ.get('VO_GAME')
                      else [])
+    if not given:
+        conf = config()
+        given = [conf['VO_GAME_' + b] for b in BUILDS if conf.get('VO_GAME_' + b)]
+        if not given and conf.get('VO_GAME'):
+            given = [conf['VO_GAME']]
     out = []
     for game in given:
         if os.path.isfile(game):
@@ -162,7 +191,7 @@ def main():
                   % (c['dim'], name, c['off'], what, c['dim'], c['off']))
             continue
         if needs_game and not games:
-            print('  %s%-9s SKIP%s  %s %s(pass the game folders)%s'
+            print('  %s%-9s SKIP%s  %s %s(no game: fill in ~/.vo-test)%s'
                   % (c['warn'], name, c['off'], what, c['dim'], c['off']))
             results.append((name, None))
             continue
@@ -214,7 +243,7 @@ def main():
     else:
         print('%sall %d passed%s' % (c['ok'], len(ran), c['off']))
     if skipped:
-        print('%s%d skipped: %s - rerun with the game folders before tagging%s'
+        print('%s%d skipped: %s - fill in ~/.vo-test, or pass the folders, before tagging%s'
               % (c['warn'], len(skipped), ' '.join(skipped), c['off']))
     return 1 if failed else 0
 

@@ -21,3 +21,7 @@ vo-net.log
 # executables, which are not in the repository either.
 maps/*
 !maps/README.md
+
+# Claude Code: instructions and settings kept local to this machine.
+CLAUDE.md
+.claude/
