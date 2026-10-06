@@ -19,12 +19,15 @@ both boxes greyed.
 - **Z-Gradt** - with Jaguarandi already unlocked, finish the game on Very
   Hard with any machine, without a single lost match.
 
-A continue is a lost match, and changing the difficulty spoils the run.
+A continue is a lost match, and changing the difficulty spoils the run;
+only a new game from the title starts a clean one.
 Each unlock is announced on a screen of its own:
 the boss turning on the left of a black screen, YOU UNLOCKED and its name
 on the right in the select's lettering, and the title jingle. PRESS BUTTON
 TO CONTINUE flashes at the bottom after a few seconds, and only a fresh
-press moves on - a button held from the fight does not skip it.
+press moves on - a button held from the fight does not skip it. The press
+is answered with the select's confirm sound, and the boss leaves the
+screen with it.
 
 Jaguarandi's screen comes straight after it falls, before the Player Data
 Report; Z-Gradt's after the credits, before the initials. The game then
@@ -63,8 +66,20 @@ unpatched game never reads it.
 - The KO replay and the win and lose shots pull back to frame a boss's
   size; on a small arena the win shots that need floor under the camera
   fall back to the usual distance rather than search for ever.
-- Z-Gradt's chase camera is pulled back out of its body.
-- Z-Gradt's laser turns the right Z-Gradt gold when both are on the field.
+- Z-Gradt's chase camera is pulled back out of its body, and turns with
+  it as it turns on the spot.
+- Z-Gradt's fly-in is shortened where the arena is in the way: indoors
+  (Deathtrap, the Spaceport, the Secret Base) it only drops into place, and
+  over the Flooded City, the Ruins and the Green Hills it starts part of the
+  way in. GET READY's count waits for it to land before the round starts;
+  on the last stage, where the CPU's Z-Gradt flies in instead, the round
+  starts as it always did.
+- Z-Gradt has no jump. The jump - both levers out, or the jump key - turns
+  it to face the opponent instead, a half turn in about a second, the
+  camera with it; not while its super laser is out.
+- Z-Gradt's laser turns the right Z-Gradt gold when both are on the field,
+  and a Z-Gradt that falls darkens alone: the player's keeps the colours it
+  was given.
 - The Player Data Report after stage 5 turns the boss itself: Jaguarandi
   in its select pose, as on its unlock screen, and Z-Gradt standing.
 - The ending plays for a boss: Jaguarandi fires its own weapon at the moon
@@ -86,9 +101,19 @@ The game already knows the bosses as fight objects - the initials demo
 fights 8 against 9 - so the objects work as a player's. What does not is
 everything the game only ever did with the eight: tables eight rows long,
 loaders that send ids above 7 elsewhere, screens framed for their size.
-`asm/bosses.asm` is one hook per such place, in two copies where the game
-has two (A, the machine at `0x1ef8xxxx`, player 2's side; B at
-`0x1ae0xxxx`, player 1's). The sections below follow the file.
+`asm/bosses.asm` is one hook per such place. The game keeps a copy of its
+fight machine per player - A, at `0x1ae0xxxx`, player 1's, and B, at
+`0x1ef8xxxx`, player 2's, the letters `docs/HIRES.md` gives their
+renderers - but B's tick (`0x40f528`) is only called from the frame loop's
+two-player branch, so a one-player game never runs it and every hook is
+A's. Whether the player is a boss is one flag, `boss`, which confirm sets
+in one player only. The sections below follow the file.
+
+The blob's buffers - the bosses' motions, the model and AI copies, the
+saved palettes and the rest, about 230 KB - are gathered at its end. The
+patcher writes it only as far as its last byte that is not zero; the annex
+section it ends claims the rest as virtual size, which Windows zeroes at
+load (`BSS_BLOBS`), so the file carries about 19 KB of it.
 
 ### The select's row
 
@@ -96,7 +121,7 @@ The select is a scene script: the camera, the eight 20 apart, the hangar.
 The patch builds a longer copy with two records after Raiden's and points
 the game at it, extends the tables that turn a cursor into a machine and an
 object into a machine to ten, and raises the cursor's limit by the unlock
-level (`selmax_b`). The camera's step is 30 to Jaguarandi and 98 on to
+level (`selmax_a`). The camera's step is 30 to Jaguarandi and 98 on to
 Z-Gradt, which also rises onto the lip (`selstep_*`).
 
 The bosses' models are their fight models posed by the select's motions:
@@ -116,8 +141,9 @@ eight's portraits (`BOSS_ICON_TILES`); `selrow_make` builds the row with
 them on entering the select, blank for a boss still locked.
 
 The row's portraits, the marks and the frame are shifted per unlock level
-(`selshift`); the frame sprite reads its x from a table the patch keeps
-(`sel_frxw`), since its own is in read-only data. The countdown's start is
+(`selshift`); the frame sprite reads its x from two doubles in the game's
+read-only data (`BS_FRX`), whose section the patcher makes writable so the
+select can set them. The countdown's start is
 `seltime`.
 
 ### Colours on the select
@@ -168,7 +194,7 @@ at the game's own count). Beating Jaguarandi clean replaces the report's
 `mov [state], 0x1c` with the unlock (`unl_jag`); a clean final win, the
 initials' `mov [state], 0x16` (`unl_z`). The unlock screen is the report's
 own state, 0x1e, driven by `unl_logic` in place of its handler: the turning
-model is the report's (`model_rb` with the CPU's standing copy), the text
+model is the report's (`model_ra` with the CPU's standing copy), the text
 the report's big font, the name the select's logo tiles carried over
 (`unl_grab`, `unl_place`), the palettes saved and given back whole.
 
@@ -189,6 +215,18 @@ with the texture bank the fights had loaded reloaded.
 - **Round animations, the ending, Z-Gradt's camera, Z-Gradt against
   Z-Gradt, Z-Gradt's gold, the replay and the win shots** - each rerouted
   for ids 8 and 9, as its section in the source explains.
+- **The player's Z-Gradt** - its fly-in starts by the arena loaded
+  (`zflyin_a`, `zf_start`), and GET READY's count is held at its end till
+  it lands (`zready_a`). Its facing goes to the chase camera each frame,
+  and the jump turns the facing to the CPU at the CPU's own aim
+  (`zlock`); Z-Gradt's own code turns its model with it.
+- **Z-Gradt's death** - it darkens through palette events 0x401 to 0x43f,
+  which the handler takes to be the CPU's; the player's are passed over
+  (`zdark_a`, `zfade_a`).
+- **Z-Gradt's launch flames** - Raiden's booster meshes, from Raiden's
+  fight model, which the select loads only when the cursor passes Raiden;
+  after a continue it starts on Z-Gradt, so the launch loads it as the
+  select would (`BS_LOADFILE`).
 
 ## Testing it
 

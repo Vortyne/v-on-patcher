@@ -11,27 +11,30 @@ bits 32
 ; On the 1P select an unlocked boss stands in the row after Raiden, cursor
 ; 8 and 9: two more scene objects, the row and its marks moved left to
 ; make room, the countdown 20 seconds longer, and the boss drawn in
-; palette rows of its own - so far on player 1's side (B) only, so a game
+; palette rows of its own - so far on player 1's side (A) only, so a game
 ; started from player 2's side has the eight alone. Confirming on a boss
 ; stores its id in the player's machine global, and the game spawns that.
 ; The initials demo already fights 8 against 9, so the objects themselves
 ; work as a player's; what does not is everything the game only ever did
 ; with the eight, which is the rest of this file.
 ;
-; Every hook comes in two, one per copy of the game: A is the machine at
-; 0x1ef8xxxx, player 2's side of the cabinet, and B the one at 0x1ae0xxxx,
-; player 1's. A one-player game runs on the side it was started from.
+; The game keeps two copies of its fight machine, one per player: A, at
+; 0x1ae0xxxx, player 1's, and B, at 0x1ef8xxxx, player 2's, whose tick
+; (0x40f528) only the frame loop's two-player branch calls - the letters
+; docs/HIRES.md gives their renderers. The bosses are one player only, so
+; every hook here is A's.
 ;
 ; One player only: in two-player and network play (GAMEMODE not 0) the
-; row stays the eight and confirm stores what it always did, so the hooks
-; further down never meet a boss there.
+; row stays the eight and confirm stores what it always did. Confirm notes
+; a boss taken in one player in `boss`, and the hooks further down ask
+; that one flag whether the player is a boss, or which.
 ;
 ; Colour. With Machine Color Select on, up and down on the select cycle the
 ; machine under the cursor through eight colours, 0 being its own. Each
 ; machine's eight are pairs of palettes from one shared pool - the other
 ; colours are mostly other machines' palettes - so a boss can wear any of
-; them, chosen on it in the row. The palette loaders (0x4c2026 A,
-; 0x4f358b B) give the boss that pair in place of its own when it is not
+; them, chosen on it in the row. The palette loaders (0x4c2026 B,
+; 0x4f358b A) give the boss that pair in place of its own when it is not
 ; 0. A boss has no colours of its own: the loaders send ids above 7 to a
 ; fixed table without reading one.
 ;
@@ -48,101 +51,67 @@ bits 32
 extern GAMEMODE                 ; 0 one player, 1 two, 2 network
 extern BS_IDLE                  ; the loop's idle call, both sites
 extern BS_SFX                   ; play a sound effect, cdecl (id)
-extern BS_SCENEA                ; scene words: [0x20, 0x30) is the
-extern BS_SCENEB                ; select and the encounter
-extern BS_G1PA                  ; the player's machine id, A and B
-extern BS_G1PB
-extern BS_MODEB                 ; B's mode: 0 puts its player on slots 1/3
+extern BS_SCENEB                ; scene words: [0x20, 0x30) is the
+extern BS_SCENEA                ; select and the encounter
+extern BS_G1PA                  ; the player's machine id
+extern BS_MODEA                 ; A's mode: 0 puts its player on slots 1/3
 extern BS_COL0                  ; colour per machine for slots 1/3
-extern BS_COL1                  ; and for 5/7, the one A's select writes
+extern BS_COL1                  ; and for 5/7
 
 ; The player's object and its fields
-extern BS_OBJA                  ; the player's object, A and B
-extern BS_OBJB
+extern BS_OBJA                  ; the player's object
 extern BS_CPUA                  ; and the CPU's
-extern BS_CPUB
 extern BS_IDA                   ; object + 0x64: its machine id
-extern BS_IDB
 extern BS_MDLA                  ; object + 0x6c: its model header
-extern BS_MDLB
-extern BS_JAGA                  ; the bosses' model headers, per copy
+extern BS_JAGA                  ; the bosses' model headers
 extern BS_ZGA
-extern BS_JAGB
-extern BS_ZGB
 extern BS_STAGEA                ; the stage, 0 Temjin to 9 Z-Gradt
-extern BS_STAGEB
 
 ; Palettes
 extern BS_PALA                  ; per palette id: a machine's eight pairs
-extern BS_PALB
 extern BS_PALSETA               ; (slot, palette): expand it into the bank
-extern BS_PALSETB
 extern BS_PALFIXA               ; the loader's own path for ids above 7
-extern BS_PALFIXB
 extern BS_PALRETA               ; and its epilogue
-extern BS_PALRETB
 
 ; PLAYER DATA, after stage 5
 extern BS_RPARTA                ; its rotating model's parts, (machine)
-extern BS_RPARTB
 extern BS_MPUSHA                ; the matrix stack: push, pop, scale (x,
-extern BS_MPOPA                 ; y, z), per copy
+extern BS_MPOPA                 ; y, z)
 extern BS_MSCALEA
-extern BS_MPUSHB
-extern BS_MPOPB
-extern BS_MSCALEB
 extern BS_RFLAG                 ; the renderer flag a machine's draw sets
-extern BS_MATA                  ; the current matrix, per copy
-extern BS_MATB
+extern BS_MATA                  ; the current matrix
 extern BS_IDENTA                ; load identity, past its prologue
-extern BS_IDENTB
 extern BS_LIGHTA                ; a machine's shadow: the light it reads,
-extern BS_LIGHTB                ; where it carries on, and past it
-extern BS_SHADEA
-extern BS_SHADEB
+extern BS_SHADEA                ; where it carries on, and past it
 extern BS_NOSHADEA
-extern BS_NOSHADEB
 extern BS_ZSHTA                 ; Z-Gradt's shadow: the timer it tests,
-extern BS_ZSHTB                 ; where it carries on, and past it
-extern BS_ZSHADEA
-extern BS_ZSHADEB
+extern BS_ZSHADEA               ; where it carries on, and past it
 extern BS_ZNOSHADEA
-extern BS_ZNOSHADEB
 extern BS_ETRA                  ; the ending's camera: the move it builds
-extern BS_ETRB                  ; the view with, and its block
-extern BS_ECBLKA
-extern BS_ECBLKB
+extern BS_ECBLKA                ; the view with, and its block
 extern BS_ESTEPA                ; and the ending's step
-extern BS_ESTEPB
 extern BS_WALLA                 ; the floor's height, from a beam segment
-extern BS_WALLB
 extern BS_SPDA                  ; Z-Gradt's beam's speed
-extern BS_SPDB
 extern BS_SCANA                 ; the ending camera's slot scan, after its
-extern BS_SCANB                 ; start, and where it takes a slot found
-extern BS_FOUNDA
-extern BS_FOUNDB
+extern BS_FOUNDA                ; start, and where it takes a slot found
 extern BS_ZTAB0                 ; Z-Gradt's tables, per side
 extern BS_ZTAB1
 extern BS_ZINITA                ; Z-Gradt's setup
-extern BS_ZINITB
 extern BS_PH0A                   ; the ending's phase 0
-extern BS_PH0B
-extern BS_ZDRAWA                ; Z-Gradt's draw, without its moves
 extern BS_SCRPTR                ; the scene script being read
-extern BS_SELSCRB               ; the select's, B's
+extern BS_SELSCRA               ; the select's, A's
 extern BS_SELCUR                ; a player's cursor on the select
-extern BS_SELINVB               ; the cursor of a machine
+extern BS_SELINVA               ; the cursor of a machine
 extern BS_COLSEL                ; Machine Color Select
-extern BS_SELMDLB               ; the select's model of a machine
-extern BS_SELINFOB              ; and its text for a cursor
-extern BS_FRAMEB                ; the frame counter
+extern BS_SELMDLA               ; the select's model of a machine
+extern BS_SELINFOA              ; and its text for a cursor
+extern BS_FRAMEA                ; the frame counter
 extern BS_SELMODE
-extern BS_PRINTAB               ; text: print on one plane or the other,
-extern BS_PRINTBB               ; place, clear a block, a block of tiles
-extern BS_TXTPOSB
-extern BS_TCLEARB
-extern BS_TBLOCKB
+extern BS_PRINT1A               ; text: print on one plane or the other,
+extern BS_PRINT2A               ; place, clear a block, a block of tiles
+extern BS_TXTPOSA
+extern BS_TCLEARA
+extern BS_TBLOCKA
 extern BS_LOGOJ                 ; the bosses' names, as tiles
 extern BS_LOGOZ
 extern BS_ROW                   ; the eight's portraits, a block of tiles
@@ -151,19 +120,18 @@ extern BS_SELSWAP               ; per machine, the bone given spare
 extern BS_SELSPEC               ; meshes and the one drawn apart
 extern BS_SELLCAM               ; the launch's camera, a machine's
 extern BS_SELAHEAD              ; how far ahead a machine is drawn
-extern BS_MFRAMEA               ; the frame a machine's motion is drawn
-extern BS_MFRAMEB               ; at, each copy's
+extern BS_MFRAMEA               ; the frame a machine's motion is drawn at
 extern BS_SELPADS               ; the pads' presses this frame, two
 extern BS_SELFLAME              ; a machine's booster flames, per frame
 extern BS_SELSKY                ; the hangar's outside shown,
 extern BS_SELIN                 ; and its inside
 extern BS_SELTICKS
 extern BS_SLOTS                 ; files loaded: where, how much
+extern BS_LOADFILE              ; load a machine's (id, -1, 0, 1), as the select
 extern BS_MALLOC                ; the C library's
+extern BS_FRX                   ; the portrait frame's two x doubles
 extern BS_TXTX                  ; the text cursor's column
 extern BS_PLANE                 ; the plane the portraits' marks are on
-extern BS_SLOTSZ
-extern BS_POOL                  ; and the end of what is loaded
 extern BS_RBNAMES               ; the fight models' files: name, size
 extern BS_RBDIR                 ; the folder they are read from
 extern BS_PATHFMT               ; "%s%s", as the loader joins them
@@ -172,21 +140,19 @@ extern BS_SPRINTF               ; the C library's
 extern BS_FOPEN
 extern BS_FREAD
 extern BS_FCLOSE
-extern BS_PALLOADB              ; B's palette load (slot, palette)
-extern BS_PALRAMB               ; and B's palettes
+extern BS_PALLOADA              ; A's palette load (slot, palette)
+extern BS_PALRAMA               ; and A's palettes
 extern BS_POLYCOL               ; the polygon being queued's light
 extern BS_COLTAB                ; the polygons' colours, a row a plane
 extern BS_SELOBJ                ; the scene's objects
 extern BS_HSITE                 ; the hangar's draw of a machine, and
 extern BS_HDOFF                 ; where the widescreen one is in its blob
-extern BS_SELRET2               ; and the returns of its other two
-extern BS_SELRET3
-extern BS_MESHB                 ; a part's meshes (the three, 0)
-extern BS_TRANSB                ; translate the matrix (x, y, z)
-extern BS_ROTXB                 ; turn it about x (the angle)
-extern BS_POSEB                 ; a fight model posed by a motion
-extern BS_ROTYB                 ; turn the matrix about y (the angle)
-extern BS_ROTZB                 ; and about z
+extern BS_MESHA                 ; a part's meshes (the three, 0)
+extern BS_TRANSA                ; translate the matrix (x, y, z)
+extern BS_ROTXA                 ; turn it about x (the angle)
+extern BS_POSEA                 ; a fight model posed by a motion
+extern BS_ROTYA                 ; turn the matrix about y (the angle)
+extern BS_ROTZA                 ; and about z
 extern BS_CREATEF               ; IAT: CreateFileA, SetFilePointer,
 extern BS_SEEKF                 ; ReadFile, CloseHandle
 extern BS_READF
@@ -195,29 +161,24 @@ extern BS_ZPARTS                ; Z-Gradt's parts its draw places
 extern BS_ZRINGS
 extern BS_ZCROWN
 extern BS_ZSIDES
-extern BS_MSETB                 ; and hand it to the renderer
-extern BS_MDRAWA                ; the eight's draw, from their per-frame
-extern BS_MDRAWB                ; routine
-extern BS_ZDRAWB
+extern BS_MSETA                 ; and hand it to the renderer
+extern BS_MDRAWA                ; the eight's draw, from their per-frame routine
+extern BS_ZDRAWA                ; Z-Gradt's draw, without its moves
 extern BS_FXA                   ; the effects tables: 24 of 0x24, 24 of 0x38
-extern BS_FXB
 extern BS_FX2A
-extern BS_FX2B
 extern SEMUTE                   ; nonzero: no sound effects
 extern BS_NAMEA                 ; its machine names, 15 bytes each
-extern BS_NAMEB
 
 ; The round's animation loads
 extern BS_LDA                   ; resume, past mov eax, [id]
-extern BS_LDB
 
 ; Unlocking
-extern BS_STATEB                ; B's state machine, the one a 1P game runs
+extern BS_STATEA                ; A's state machine, the one a 1P game runs
 extern BS_DIFF                  ; the difficulty: 2 Very Hard
-extern BS_LOSSB                 ; B's lost matches with this machine
-extern BS_REPLOGICB             ; PLAYER DATA's state 0x1e, its text,
-extern BS_REPTEXTB              ; its turning model (scale), the frame
-extern BS_REPMODELB             ; it counts
+extern BS_LOSSA                 ; A's lost matches with this machine
+extern BS_REPLOGICA             ; PLAYER DATA's state 0x1e, its text,
+extern BS_REPTEXTA              ; its turning model (scale), the frame
+extern BS_REPMODELA             ; it counts
 extern BS_REPCNT
 extern BS_TCLRALL               ; text: clear the planes, reset the cursor,
 extern BS_TRESET                ; print in the large white font
@@ -231,7 +192,6 @@ extern BS_ARTPOOL               ; the 2D art: tile n at + n * 0x80, n
 extern BS_ARTPOOL2              ; below the count; with 0x4000, the other
 extern BS_ARTCOUNT              ; bank's; and where .data ends
 extern BS_ARTEND
-extern BS_LOADSCN               ; load a scene's file (n), the one in, and a
 extern BS_SCNNOW                ; texture bank (bank, half)
 extern BS_LOADTEX
 extern BS_FCBUF                 ; the scene's floor texture and model, as
@@ -242,106 +202,68 @@ extern BS_GLOW3
 extern BS_MTSELMEM              ; where MT_sel.bin is read to, when its
 extern BS_SEGA                  ; segment (0xa) is empty, and that segment
 extern BS_LDXA                  ; the extras that follow the loads
-extern BS_LDXB
 extern BS_DRFA                  ; the deref: fall through, its je, and past
 extern BS_DRJA                  ; the stand overlay
 extern BS_DRSA
-extern BS_DRFB
-extern BS_DRJB
-extern BS_DRSB
 extern BS_C2A                   ; mode 0xa: resume
-extern BS_C2B
 %include "frames.inc"           ; DR_FLAG: the deref's local; CAM_PTR: the
                                 ; live camera's; PAL_CPU: the palette
                                 ; events' side flag. A recompile moves them
 
 ; The ending
 extern BS_TIMEA                 ; the ending's frame counter
-extern BS_TIMEB
 extern BS_PHASEA                ; and its phase
-extern BS_PHASEB
 extern BS_ENDA                  ; resume, phase 1, epilogue, button wait
 extern BS_END1A
 extern BS_ENDEA
 extern BS_ENDWA
-extern BS_ENDB
-extern BS_END1B
-extern BS_ENDEB
-extern BS_ENDWB
 
 ; Z-Gradt's chase camera
 extern BS_VIEWA                 ; view translate, and its sin and cos
 extern BS_SINA
 extern BS_COSA
-extern BS_VIEWB
-extern BS_SINB
-extern BS_COSB
-extern BS_YAW1                  ; the yaw each call placed its eye by
-extern BS_YAW2
-extern BS_YAW4
+extern BS_YAW4                  ; the yaw each call placed its eye by
 extern BS_YAW5
 extern BS_LIVEA                 ; resume past the live camera's load
-extern BS_LIVEB
 
 ; Z-Gradt against Z-Gradt
 extern BS_READYA                ; frames since GET READY
-extern BS_READYB
 extern BS_INITA                 ; Z-Gradt's init, resume
-extern BS_INITB
 extern BS_FLYA                  ; fly-in: resume, after landing, epilogue
 extern BS_FLYPA
 extern BS_FLYEA
-extern BS_FLYB
-extern BS_FLYPB
-extern BS_FLYEB
 extern BS_ZMODA                 ; the model header Z-Gradt's code reads
-extern BS_ZMODB
 extern BS_ZTIMA                 ; the fly-in timer
-extern BS_ZTIMB
-extern BS_TM1                   ; four timer locks: resume and skip each
-extern BS_TM1S
-extern BS_TM2
+extern BS_RCOUNTA                ; A's frames left in a state
+extern BS_ARENA                  ; the arena loaded, 0 to 9
+extern BS_TM2                   ; two timer locks: resume and skip each
 extern BS_TM2S
-extern BS_TM3
-extern BS_TM3S
 extern BS_TM4
 extern BS_TM4S
 extern BS_CLIP0A                ; the clip bank: 0 the pad's, 3 the AI's
 extern BS_CLIP3A
-extern BS_CLIP0B
-extern BS_CLIP3B
 extern BS_CLONEA                ; resume
-extern BS_CLONEB
 extern BS_BSSA                  ; Z-Gradt's AI state
-extern BS_BSSB
 extern BS_TICKA                 ; its tick, resume
-extern BS_TICKB
 
 ; Z-Gradt's gold
-extern BS_EVA                   ; the palette event each copy's handler
-extern BS_EVB                   ; takes, 0xff none
+extern BS_EVA                   ; the palette event its handler takes, 0xff none
 extern BS_ZEVA                  ; the one Z-Gradt's AI state asks for
-extern BS_ZEVB
 extern BS_LOADA                 ; (slot, palette id): the loaders
-extern BS_LOADB
 extern BS_ZRA5                  ; event 0x200, its own palettes back:
 extern BS_ZRA1                  ; slots 5/7, slots 1/3, and the end
 extern BS_ZRAX
 extern BS_ZGA5                  ; event 0x21f, gold: slots 5/7, 1/3
 extern BS_ZGA1
-extern BS_ZRB5
-extern BS_ZRB1
-extern BS_ZRBX
-extern BS_ZGB5
-extern BS_ZGB1
+extern BS_ZDA5                  ; events 0x401 on, darker: slots 5/7, 1/3
+extern BS_ZDA1
+extern BS_ZFA5                  ; and 0x420 on, fading
+extern BS_ZFA1
 
 ; The KO replay and the win and lose screens
-extern BS_WIND1                 ; the win camera's distance, per copy
-extern BS_WIND2
+extern BS_WIND1                 ; the win camera's distance
 extern BS_RPITCH1               ; the replay camera's pitch and yaw
 extern BS_RYAW1
-extern BS_RPITCH2
-extern BS_RYAW2
 
 JAG         equ 8
 ZGRADT      equ 9
@@ -404,12 +326,12 @@ tick:
         call    selpalguard
         mov     dword [win_tries], 0
         xor     edx, edx
-        movzx   eax, word [BS_SCENEA]
+        movzx   eax, word [BS_SCENEB]
         cmp     eax, SELECT_LO
         jb      .b
         cmp     eax, SELECT_HI
         jb      .in
-.b:     movzx   eax, word [BS_SCENEB]
+.b:     movzx   eax, word [BS_SCENEA]
         cmp     eax, SELECT_LO
         jb      .out
         cmp     eax, SELECT_HI
@@ -432,28 +354,26 @@ tick:
         mov     dword [sel_zspin], 0
         mov     dword [end_g1p], 0
         mov     dword [banked_a], 0 ; a new fight's Z-Gradt starts from the
-        mov     dword [banked_b], 0 ; CPU's state just initialised again
+                                    ; CPU's state just initialised again
         mov     byte [zfly_on], 0   ; and a player's Z-Gradt on the ground
         call    zbeam_off
         cmp     dword [BS_G1PA], 7
-        jbe     .g1
-        mov     dword [BS_G1PA], 0
-.g1:    cmp     dword [BS_G1PB], 7
         jbe     .attract
-        mov     dword [BS_G1PB], 0
+        mov     dword [BS_G1PA], 0
 .attract:
-        movzx   eax, word [BS_SCENEA]
+        movzx   eax, word [BS_SCENEB]
         sub     eax, ATTRACT_LO
         cmp     eax, ATTRACT_HI - ATTRACT_LO
         jb      .forget
-        movzx   eax, word [BS_SCENEB]
+        movzx   eax, word [BS_SCENEA]
         sub     eax, ATTRACT_LO
         cmp     eax, ATTRACT_HI - ATTRACT_LO
         jae     .mode
 .forget:
+        cmp     dword [BS_STATEA], ST_TITLE ; the title, not a fight's end,
+        ja      .mode               ; which shows a scene in that range too
         mov     dword [boss], 0
 .mode:  STAND   BS_OBJA, BS_READYA, BS_BSSA, stand_a, standai_a, stood_a
-        STAND   BS_OBJB, BS_READYB, BS_BSSB, stand_b, standai_b, stood_b
         cmp     dword [GAMEMODE], 0
         jne     .done
         test    edx, edx
@@ -467,16 +387,11 @@ tick:
 ; call. eax is the machine under the cursor; a boss of the lineup is
 ; noted, with the colour it was given here.
 confirm_a:
-        mov     ecx, BS_COL1        ; A's select always writes this one
-        mov     edx, BS_G1PA
-        jmp     confirm
-confirm_b:
-        mov     ecx, BS_COL0        ; B's picks by its mode, as 0x5a0149 does
-        cmp     dword [BS_MODEB], 0
+        mov     ecx, BS_COL0        ; A's picks by its mode, as 0x5a0149 does
+        cmp     dword [BS_MODEA], 0
         je      .c
         mov     ecx, BS_COL1
-.c:     mov     edx, BS_G1PB
-confirm:
+.c:     mov     edx, BS_G1PA
         mov     dword [boss], 0
         cmp     dword [GAMEMODE], 0
         jne     .store
@@ -505,7 +420,7 @@ confirm:
 ; place of the game's at every read. A machine's object is the cursor's
 ; plus two, so the two go in before the hangar's.
 ;
-; Only B's select so far.
+; Only A's select so far.
 SEL_REC     equ 0x30                ; a script record
 SEL_EIGHT   equ 10                  ; the camera, its own, and the eight
 SEL_REST    equ 14                  ; the hangar's, to the end marker
@@ -514,14 +429,14 @@ SEL_Z       equ 0x1c                ; its place along the row
 SEL_FLAGS   equ 0x10                ; and its flags, the machine twice
 
 ; In place of `mov [script], select's`, five nops after the call.
-selscr_b:
+selscr_a:
         pushad
         cmp     byte [selbuilt], 0
         jne     .set
-        COPYN   selscript, BS_SELSCRB, SEL_EIGHT * SEL_REC
-        COPYN   selscript + SEL_EIGHT * SEL_REC, BS_SELSCRB + (SEL_EIGHT - 1) * SEL_REC, SEL_REC
-        COPYN   selscript + (SEL_EIGHT + 1) * SEL_REC, BS_SELSCRB + (SEL_EIGHT - 1) * SEL_REC, SEL_REC
-        COPYN   selscript + (SEL_EIGHT + 2) * SEL_REC, BS_SELSCRB + SEL_EIGHT * SEL_REC, SEL_REST * SEL_REC
+        COPYN   selscript, BS_SELSCRA, SEL_EIGHT * SEL_REC
+        COPYN   selscript + SEL_EIGHT * SEL_REC, BS_SELSCRA + (SEL_EIGHT - 1) * SEL_REC, SEL_REC
+        COPYN   selscript + (SEL_EIGHT + 1) * SEL_REC, BS_SELSCRA + (SEL_EIGHT - 1) * SEL_REC, SEL_REC
+        COPYN   selscript + (SEL_EIGHT + 2) * SEL_REC, BS_SELSCRA + SEL_EIGHT * SEL_REC, SEL_REST * SEL_REC
         mov     ebx, selscript + SEL_EIGHT * SEL_REC
         mov     dword [ebx + SEL_FLAGS], JAG * 2
         fld     dword [ebx + SEL_Z]
@@ -545,9 +460,9 @@ selscr_b:
         COPYN   sellcam, BS_SELLCAM, 8 * SEL_LCAM ; the launch's camera:
         COPYN   sellcam + JAG * SEL_LCAM, sel_jagcam, SEL_LCAM ; Raiden's,
         COPYN   sellcam + ZGRADT * SEL_LCAM, sel_jagcam, SEL_LCAM ; further
-        mov     eax, [BS_JAGB + SEL_PARTS]      ; Jaguarandi's with them
+        mov     eax, [BS_JAGA + SEL_PARTS]      ; Jaguarandi's with them
         mov     [selrows + JAG * SEL_ROWS], eax
-        mov     eax, [BS_JAGB + SEL_POSED]
+        mov     eax, [BS_JAGA + SEL_POSED]
         mov     [selrows + JAG * SEL_ROWS + 4], eax
         mov     byte [selbuilt], 1
 .set:   mov     dword [BS_SCRPTR], selscript
@@ -556,7 +471,7 @@ selscr_b:
 
 ; In place of `cmp [cursor], 7`, three nops after the call; the flags as
 ; it leaves them. eax the player times 21, as the game indexes.
-selmax_b:
+selmax_a:
         push    ecx
         mov     ecx, 7
         cmp     dword [GAMEMODE], 0
@@ -569,7 +484,7 @@ selmax_b:
 ; In place of `mov eax, [eax*4 + cursor of machine]` for the cursor the
 ; select starts on, the last machine taken: a boss's own in one player,
 ; Raiden's otherwise. Two nops after the call.
-selinit_b:
+selinit_a:
         cmp     eax, JAG
         jb      .eight
         cmp     dword [GAMEMODE], 0
@@ -578,7 +493,7 @@ selinit_b:
 .raiden:
         mov     eax, 7
         ret
-.eight: mov     eax, [eax * 4 + BS_SELINVB]
+.eight: mov     eax, [eax * 4 + BS_SELINVA]
         ret
 
 ; In place of `cmp [colour select], 0`, two nops after the call; the flags
@@ -590,7 +505,7 @@ selinit_b:
 SEL_BCOLS   equ 1 + 8 * 7           ; its own, the eight's but their own
 SEL_UP      equ 0x20                ; the pads' bits
 SEL_DOWN    equ 0x10
-selcol_b:
+selcol_a:
         push    eax
         mov     eax, [ebp + 8]
         imul    eax, eax, 0x54
@@ -649,16 +564,17 @@ SEL_ROWS    equ 0x18                ; a machine's row
 SEL_LCAM    equ 0xc                 ; its launch camera: out, up, turn a frame
 SEL_RAIDEN  equ 3
 SEL_JAGFILE equ 5                   ; Jaguarandi's file slot
+SEL_RAIFILE equ 7                   ; Raiden's
 SEL_PARTS   equ 0x20                ; a fight model's body, the two ways
 SEL_POSED   equ 0x1c                ; a select row has it
 SEL_ZFILE   equ 9                   ; Z-Gradt's file slot
-selmdl_b:
+selmdl_a:
         cmp     dword [esp + 4], JAG
         jae     .boss
 .draw:  push    ebp
         mov     ebp, esp
         sub     esp, 0x30
-        jmp     BS_SELMDLB + 6
+        jmp     BS_SELMDLA + 6
 .none:  jmp     sel_slotsout
 .boss:  mov     eax, [esp + 4]      ; a boss still locked: not there
         sub     eax, 7
@@ -684,7 +600,7 @@ selmdl_b:
         jne     .jag
         call    selzdraw
         jmp     .done
-.jag:   mov     byte [seljagdraw], 1 ; drawn with its head (selpart_b)
+.jag:   mov     byte [seljagdraw], 1 ; drawn with its head (selpart_a)
 %rep 4
         push    dword [esp + 16]
 %endrep
@@ -706,35 +622,35 @@ selmdl_b:
 SEL_CHEST   equ 7
 SEL_HEAD    equ 0x18                ; a fight model's head, its first group
 SEL_NECKX   equ -3775 + 3778        ; the head's turn from the chest's
-selpart_b:
+selpart_a:
         cmp     byte [seljagdraw], 0
-        je      BS_MESHB
+        je      BS_MESHA
         cmp     dword [ebp - 0x18], SEL_CHEST
-        jne     BS_MESHB
+        jne     BS_MESHA
 %rep 4
         push    dword [esp + 16]
 %endrep
-        call    BS_MESHB
+        call    BS_MESHA
         add     esp, 16
-        call    BS_MPUSHB
+        call    BS_MPUSHA
         push    dword [sel_neck + 8]
         push    dword [sel_neck + 4]
         push    dword [sel_neck]
-        call    BS_TRANSB
+        call    BS_TRANSA
         add     esp, 12
         push    SEL_NECKX
-        call    BS_ROTXB
+        call    BS_ROTXA
         add     esp, 4
-        call    BS_MSETB
-        mov     eax, [BS_JAGB + SEL_HEAD]
+        call    BS_MSETA
+        mov     eax, [BS_JAGA + SEL_HEAD]
         push    0
         push    dword [eax + 0xc + 8]
         push    dword [eax + 0xc + 4]
         push    dword [eax + 0xc]
-        call    BS_MESHB
+        call    BS_MESHA
         add     esp, 16
-        call    BS_MPOPB
-        call    BS_MSETB
+        call    BS_MPOPA
+        call    BS_MSETA
         ret
 
 ; Z-Gradt's body, on the matrix the hangar puts a machine on (cdecl, as
@@ -747,7 +663,7 @@ SEL_ZPODS   equ 4                   ; its parts before its head
 SEL_ZREC    equ 0x14                ; a bone's turn and place in a frame
 selzdraw:
         pushad
-        call    BS_MPUSHB
+        call    BS_MPUSHA
         cmp     dword [boss], ZGRADT ; flying out: leant and turning
         jne     .pose
         cmp     dword [BS_SELOBJ + SEL_ZOBJ * SEL_OBJ + SEL_OBJST], 2
@@ -755,25 +671,25 @@ selzdraw:
         push    0
         push    dword [sel_zpivot]
         push    0
-        call    BS_TRANSB
+        call    BS_TRANSA
         add     esp, 12
         sub     esp, 4
         fld     dword [sel_ztilt]
         fistp   dword [esp]
-        call    BS_ROTXB
+        call    BS_ROTXA
         push    dword [sel_zspin]
-        call    BS_ROTYB
+        call    BS_ROTYA
         add     esp, 8
         push    0
         push    dword [sel_zpivotn]
         push    0
-        call    BS_TRANSB
+        call    BS_TRANSA
         add     esp, 12
 .pose:
 %rep 3
         push    dword [sel_zscale]
 %endrep
-        call    BS_MSCALEB
+        call    BS_MSCALEA
         add     esp, 12
         call    sel_loadzmot        ; its motion (esi) and frame (edi):
         mov     esi, selzmot        ; standing still till taken,
@@ -811,9 +727,9 @@ selzdraw:
         push    edi                 ; at that frame
         push    selzvar
         push    selzout
-        push    dword [BS_ZGB + 0x10] ; its bones
+        push    dword [BS_ZGA + 0x10] ; its bones
         push    esi
-        call    BS_POSEB
+        call    BS_POSEA
         add     esp, 28
         imul    edi, edi, SEL_ZBONES ; the root bone, as the frame has it
         add     edi, SEL_ZROOT
@@ -822,47 +738,47 @@ selzdraw:
         push    dword [edi + 0x10]
         push    dword [edi + 0xc]
         push    dword [edi + 8]
-        call    BS_TRANSB
+        call    BS_TRANSA
         add     esp, 12
         movsx   eax, word [edi + 4]
         push    eax
-        call    BS_ROTZB
+        call    BS_ROTZA
         movsx   eax, word [edi + 2]
         mov     [esp], eax
-        call    BS_ROTYB
+        call    BS_ROTYA
         movsx   eax, word [edi]
         mov     [esp], eax
-        call    BS_ROTXB
+        call    BS_ROTXA
         add     esp, 4
         mov     esi, selzparts
 .part:  cmp     dword [esi], 0
         je      .parts
         cmp     esi, selzparts + SEL_ZPODS * SEL_ZPART
         jne     .draw
-        call    BS_MPUSHB           ; past its pods, the rest bounced
+        call    BS_MPUSHA           ; past its pods, the rest bounced
         call    selzbounce
 .draw:
-        call    BS_MPUSHB
+        call    BS_MPUSHA
         push    dword [esi + 12]
         push    dword [esi + 8]
         push    dword [esi + 4]
-        call    BS_TRANSB
+        call    BS_TRANSA
         add     esp, 12
         push    dword [esi + 16]
-        call    BS_ROTYB
+        call    BS_ROTYA
         add     esp, 4
-        call    BS_MSETB
+        call    BS_MSETA
         mov     eax, [esi]
         push    0
         push    dword [eax + 8]
         push    dword [eax + 4]
         push    dword [eax]
-        call    BS_MESHB
+        call    BS_MESHA
         add     esp, 16
-        call    BS_MPOPB
+        call    BS_MPOPA
         add     esi, SEL_ZPART
         jmp     .part
-.parts: call    BS_MPOPB
+.parts: call    BS_MPOPA
         cmp     dword [boss], ZGRADT ; flying out: its thruster lit,
         jne     .done
         mov     eax, [BS_SELOBJ + SEL_ZOBJ * SEL_OBJ]
@@ -870,15 +786,23 @@ selzdraw:
         jne     .done
         cmp     eax, SEL_LAUNCH
         jle     .done
-        xor     ebx, ebx            ; Raiden's booster's, larger, under
-.flame: call    BS_MPUSHB           ; it, twice, a quarter turn apart:
+        cmp     dword [BS_SLOTS + SEL_RAIFILE * 4], 0 ; the flames are
+        jne     .lit                ; meshes of Raiden's fight model, which
+        push    1                   ; the select loads as it draws Raiden:
+        push    0                   ; not yet on a continue, the cursor
+        push    -1                  ; already on Z-Gradt. Loaded as the
+        push    SEL_RAIDEN          ; select does (0x59cbfe), by machine
+        call    BS_LOADFILE
+        add     esp, 16
+.lit:   xor     ebx, ebx            ; Raiden's booster's, larger, under
+.flame: call    BS_MPUSHA           ; it, twice, a quarter turn apart:
         push    0                   ; four jets
         push    dword [sel_zflamey]
         push    0
-        call    BS_TRANSB
+        call    BS_TRANSA
         add     esp, 12
         push    ebx
-        call    BS_ROTYB
+        call    BS_ROTYA
         add     esp, 4
         mov     eax, [BS_SELOBJ + SEL_ZOBJ * SEL_OBJ]
         sub     eax, SEL_LAUNCH     ; lighting: the jets grow out of it,
@@ -891,17 +815,17 @@ selzdraw:
         fidiv   dword [sel_zjet]
         fstp    dword [esp]
         push    dword [sel_one]
-        call    BS_MSCALEB
+        call    BS_MSCALEA
         add     esp, 12
         push    dword [sel_zflamerx]
-        call    BS_ROTXB
+        call    BS_ROTXA
         add     esp, 4
 %rep 3
         push    dword [sel_zflames]
 %endrep
-        call    BS_MSCALEB
+        call    BS_MSCALEA
         add     esp, 12
-        call    BS_MSETB
+        call    BS_MSETA
         mov     eax, [BS_SELOBJ + SEL_ZOBJ * SEL_OBJ]
         dec     eax                 ; its flicker, four frames
         and     eax, 3
@@ -912,14 +836,14 @@ selzdraw:
         push    dword [eax + 8]
         push    dword [eax + 4]
         push    dword [eax]
-        call    BS_MESHB
+        call    BS_MESHA
         add     esp, 16
-        call    BS_MPOPB
+        call    BS_MPOPA
         add     ebx, 0x4000
         cmp     ebx, 0x8000
         jb      .flame
-.done:  call    BS_MPOPB
-        call    BS_MSETB
+.done:  call    BS_MPOPA
+        call    BS_MSETA
         popad
         ret
 
@@ -933,7 +857,7 @@ selzbounce:
         test    ecx, ecx
         jz      .out
         sub     esp, 4
-        mov     eax, [BS_FRAMEB]
+        mov     eax, [BS_FRAMEA]
         sub     ecx, SEL_ZSHAKE
         jle     .nod
         mov     edx, eax            ; about z
@@ -944,8 +868,8 @@ selzbounce:
         fmul    dword [sel_eight]
         call    .sin
         fistp   dword [esp]
-        call    BS_ROTZB
-        mov     eax, [BS_FRAMEB]    ; and y
+        call    BS_ROTZA
+        mov     eax, [BS_FRAMEA]    ; and y
         mov     edx, eax
         shl     edx, 12
         mov     ecx, [sel_zhead]
@@ -955,8 +879,8 @@ selzbounce:
         fmul    dword [sel_four]
         call    .sin
         fistp   dword [esp]
-        call    BS_ROTYB
-.nod:   mov     eax, [BS_FRAMEB]    ; about x
+        call    BS_ROTYA
+.nod:   mov     eax, [BS_FRAMEA]    ; about x
         mov     edx, eax
         shl     edx, 10
         lea     edx, [edx + edx * 2]
@@ -964,9 +888,9 @@ selzbounce:
         fmul    dword [sel_four]
         call    .sin
         fistp   dword [esp]
-        call    BS_ROTXB
+        call    BS_ROTXA
         add     esp, 4
-        mov     eax, [BS_FRAMEB]    ; and up and down
+        mov     eax, [BS_FRAMEA]    ; and up and down
         add     eax, 10
         lea     edx, [eax * 8]
         sub     edx, eax
@@ -978,7 +902,7 @@ selzbounce:
         sub     esp, 4
         fstp    dword [esp]
         push    0
-        call    BS_TRANSB
+        call    BS_TRANSA
         add     esp, 12
 .out:   ret
 ; st0 times the sine of the angle dx (a word); eax, edx spent.
@@ -1054,7 +978,7 @@ sel_loadzmot:
 ; Jaguarandi's place too (drawn black: its palettes are not in). In place
 ; of `fadd qword [28.43]`, a nop after; [ebp+0xc] the scene object.
 SEL_ZOBJ    equ SEL_EIGHT + 1       ; Z-Gradt's scene object
-selcull_b:
+selcull_a:
         fadd    qword [BS_SELAHEAD]
         cmp     dword [ebp + 0xc], SEL_ZOBJ
         jne     .out
@@ -1065,7 +989,7 @@ selcull_b:
 ; and Jaguarandi: Z-Gradt flies. In place of `cmp [the player's state], 0`
 ; in the sled's draw, a nop after; eax the player times 0x15, and the
 ; cursor, once taken, the machine's scene object.
-selsled_b:
+selsled_a:
         cmp     dword [eax * 4 + BS_SELCUR + SEL_STATE], 0
         je      .out                ; nothing taken: no sled
         cmp     dword [eax * 4 + BS_SELCUR], SEL_ZOBJ ; Z-Gradt: as if
@@ -1077,7 +1001,7 @@ selsled_b:
 ; height through the hangar and its tunnel, and once past the tunnel's
 ; mouth (sel_zexit, where the camera waits outside) speeds up, drops to
 ; skim the water as the eight do, and far out climbs away. Its height is set from its frame and place each
-; tick, the launch's own (its hop, its arc) not stored (selzy_b). It leans
+; tick, the launch's own (its hop, its arc) not stored (selzy_a). It leans
 ; into its flight, its thruster underneath trailing (sel_ztilt, eased
 ; towards the way it moved this frame), and outside it turns about itself
 ; (sel_zspin); selzdraw applies both. The camera of the player who
@@ -1088,7 +1012,6 @@ SEL_OBJST   equ 0xc                 ; a scene object's state: 2 launching
 SEL_OBJY    equ 0x34                ; its height
 SEL_LAUNCH  equ 0xb0                ; its frame as the launch moves it
 SEL_ZRISE   equ 40
-SEL_ZOUT    equ 236                 ; the frame the camera cuts outside
 SEL_ZHIT    equ 0x14                ; its sounds (the sound test's names):
 SEL_ZFSE    equ 0x1c                ; SDE_hit_03 and SDE_fse_05,
 SEL_ZJUMP   equ 0x19                ; SDE_jump_02, SDE_bom_12 - common
@@ -1239,8 +1162,8 @@ selzlift:
 ; tunnel's mouth. In place of `mov eax, [ticks]` after the timetable;
 ; [ebp-4] the launch's frame.
 SEL_ZSKY    equ 224
-selsky_b:
-        cmp     dword [BS_G1PB], ZGRADT
+selsky_a:
+        cmp     dword [BS_G1PA], ZGRADT
         jne     .out
         cmp     dword [ebp - 4], SEL_ZSKY
         jl      .out
@@ -1261,7 +1184,7 @@ selsky_b:
 ; mouth - while it skims, below the deck. In place of
 ; `cmp [the spray's frame], [the machine's frame]`, the next `jge` skipping
 ; it; ecx the machine's scene object times 0x15.
-selspray_b:
+selspray_a:
         cmp     ecx, SEL_ZOBJ * 0x15
         je      .z
         cmp     eax, [ecx * 4 + BS_SELOBJ]
@@ -1290,7 +1213,7 @@ selspray_b:
 ; In place of the launch's `fstp [a scene object's height]` (its hop off
 ; the conveyor, its arc out of the hangar), two nops after; eax the object
 ; times 0x15. Z-Gradt's is selzlift's.
-selzy_b:
+selzy_a:
         cmp     eax, SEL_ZOBJ * 0x15
         je      .z
         fstp    dword [eax * 4 + BS_SELOBJ + SEL_OBJY]
@@ -1307,7 +1230,7 @@ selzy_b:
 ; `mov eax, [eax*4 + the cursor]`, two nops after; eax the player times
 ; 0x15.
 SEL_LAST    equ 7                   ; Raiden's cursor, the last
-selpalev_b:
+selpalev_a:
         push    edx
         lea     edx, [eax * 4 + BS_SELCUR]
         mov     eax, [edx]
@@ -1344,8 +1267,8 @@ selpalev_b:
 ; goes by, by a timetable a machine; one past the eight's shows none. A
 ; boss goes by Raiden's, whose launch Jaguarandi's is. In place of
 ; `mov eax, [the player's machine]`.
-selfloor_b:
-        mov     eax, [BS_G1PB]
+selfloor_a:
+        mov     eax, [BS_G1PA]
         cmp     eax, JAG
         jb      .out
         mov     eax, SEL_RAIDEN
@@ -1402,13 +1325,13 @@ seljagpal:
 
 SEL_LREG    equ -1
 SEL_GOES    equ 2                   ; a scene object's state: launching
-; ZF set on the select or a launch from it (B's state).
+; ZF set on the select or a launch from it (A's state).
 SEL_STSEL   equ 4
 SEL_STLAUNCH equ 5
 selstate:
-        cmp     dword [BS_STATEB], SEL_STSEL
+        cmp     dword [BS_STATEA], SEL_STSEL
         je      .out
-        cmp     dword [BS_STATEB], SEL_STLAUNCH
+        cmp     dword [BS_STATEA], SEL_STLAUNCH
 .out:   ret
 
 ; Off them, from the tick: the rows as they were (pushad'd).
@@ -1467,7 +1390,7 @@ selrows_each:
         mov     ebx, sel_bslots
 .row:   mov     edx, [ebx]
         shl     edx, 9              ; a row
-        add     edx, BS_PALRAMB
+        add     edx, BS_PALRAMA
         xor     eax, eax
 .plane: push    esi
         push    edi
@@ -1504,8 +1427,8 @@ selrest:
         xor     eax, eax
 .plane: mov     ecx, eax
         shl     ecx, 14             ; a plane
-        lea     edx, [ecx + BS_PALRAMB + SEL_PALRAM + SEL_PALHALF] ; row 1's
-        lea     esi, [ecx + BS_PALRAMB]
+        lea     edx, [ecx + BS_PALRAMA + SEL_PALRAM + SEL_PALHALF] ; row 1's
+        lea     esi, [ecx + BS_PALRAMA]
         mov     ecx, [ebx]
         shl     ecx, 9
         lea     edi, [esi + ecx + SEL_PALHALF]
@@ -1556,32 +1479,32 @@ selbosspal:
         shl     ebx, 2              ; its own
         push    ebx
         push    edi
-        call    BS_PALLOADB
+        call    BS_PALLOADA
         add     esp, 8
         inc     ebx
         push    ebx
         push    esi
-        call    BS_PALLOADB
+        call    BS_PALLOADA
         add     esp, 8
         ret
 .worn:  push    esi                 ; or one of the eight's: its pair, from
         xor     ecx, ecx            ; the side this select's player is on
-        cmp     dword [BS_MODEB], 0
+        cmp     dword [BS_MODEA], 0
         je      .side
         mov     ecx, 2
 .side:  lea     esi, [ecx + eax * 4]
-        lea     esi, [BS_PALB + esi * 4]
+        lea     esi, [BS_PALA + esi * 4]
         lea     ebx, [edx * 2]
         mov     eax, [esi]
         push    dword [eax + ebx * 4]
         push    edi
-        call    BS_PALSETB
+        call    BS_PALSETA
         add     esp, 8
         mov     eax, [esi + 4]
         pop     edi                 ; the second row
         push    dword [eax + ebx * 4 + 4]
         push    edi
-        call    BS_PALSETB
+        call    BS_PALSETA
         add     esp, 8
         ret
 
@@ -1590,7 +1513,7 @@ selbosspal:
 ; A boss is further on - Jaguarandi 30 past Raiden, Z-Gradt 98 past it,
 ; and the camera stops 30 short of Z-Gradt - so it is shaded again here by
 ; that distance in the eight's measure: each gap to the camera counted as
-; 20 (sel_fjag, sel_fz; past the list as it is). From selmdl_b, eax the
+; 20 (sel_fjag, sel_fz; past the list as it is). From selmdl_a, eax the
 ; boss, ebp the hangar's frame: [ebp+8] the camera's object, [ebp+0xc]
 ; the machine's; only when called from the widescreen hangar_draw (the
 ; return in its blob).
@@ -1601,7 +1524,7 @@ selfade:
         pushad
         mov     ecx, [BS_HSITE + 1] ; the hangar's call: the widescreen's?
         lea     ecx, [ecx + BS_HSITE + 5]
-        cmp     ecx, BS_SELMDLB
+        cmp     ecx, BS_SELMDLA
         je      .out
         sub     ecx, BS_HDOFF
         mov     edx, [esp + 32 + 4] ; and it the caller
@@ -1935,18 +1858,18 @@ SEL_TXT     equ 0x68                ; per boss: four weapons of 0x14, its
 SEL_CODE    equ 0x50                ; model, and its name: tiles, width,
 SEL_LOGO    equ 0x5c                ; height
 SEL_LINES   equ 4
-selinfo_b:
+selinfo_a:
         mov     eax, [esp + 4]
         cmp     eax, JAG
         jge     .boss
         test    eax, eax
-        jl      BS_SELINFOB
+        jl      BS_SELINFOA
         push    esi
         call    selplane
         mov     edx, selblank
         call    sellines
         pop     esi
-        jmp     BS_SELINFOB
+        jmp     BS_SELINFOA
 .boss:  push    ebx
         push    esi
         lea     ebx, [eax - JAG]
@@ -1957,24 +1880,24 @@ selinfo_b:
         call    sellines
         push    0x10
         push    7
-        call    BS_TXTPOSB
+        call    BS_TXTPOSA
         add     esp, 8
         push    3
         push    0x26
-        call    BS_TCLEARB
+        call    BS_TCLEARA
         add     esp, 8
         push    dword [ebx + SEL_LOGO + 8]
         push    dword [ebx + SEL_LOGO + 4]
         push    dword [ebx + SEL_LOGO]
-        call    BS_TBLOCKB
+        call    BS_TBLOCKA
         add     esp, 12
         push    0xe
         push    8
-        call    BS_TXTPOSB
+        call    BS_TXTPOSA
         add     esp, 8
         lea     eax, [ebx + SEL_CODE]
         push    eax
-        call    BS_PRINTBB
+        call    BS_PRINT2A
         add     esp, 4
         pop     esi
         pop     ebx
@@ -1982,14 +1905,14 @@ selinfo_b:
 
 ; esi the print for the plane this frame writes, as the game picks it.
 selplane:
-        mov     eax, [BS_FRAMEB]
+        mov     eax, [BS_FRAMEA]
         cmp     dword [BS_SELMODE], 2
         jne     .p
         shr     eax, 1
-.p:     mov     esi, BS_PRINTBB
+.p:     mov     esi, BS_PRINT2A
         test    eax, 1
         jz      .out
-        mov     esi, BS_PRINTAB
+        mov     esi, BS_PRINT1A
 .out:   ret
 
 ; The weapon lines, from edx, 0x14 apart (or one line again, selblank's),
@@ -2001,7 +1924,7 @@ sellines:
 %rep SEL_LINES
         push    0x14 + 2 * i
         push    8
-        call    BS_TXTPOSB
+        call    BS_TXTPOSA
         add     esp, 8
         push    ebx
         call    esi
@@ -2136,9 +2059,9 @@ seltime:
 .out:   ret
 
 ; The frame round the portrait under a cursor is a sprite, at the
-; portrait's place in pixels plus two doubles, read-only data the game's
-; reads of are pointed at sel_frxw instead; from the tick, set for the
-; shift each frame.
+; portrait's place in pixels plus two doubles in .rdata (BS_FRX), which the
+; patcher makes writable; from the tick, set for the shift each frame,
+; from their own values kept in sel_frx.
 selframex:
         call    selshift
         shl     eax, 3              ; 8 pixels a column
@@ -2147,10 +2070,10 @@ selframex:
         add     esp, 4
         fld     qword [sel_frx]
         fsub    st1
-        fstp    qword [sel_frxw]
+        fstp    qword [BS_FRX]
         fld     qword [sel_frx + 8]
         fsubrp  st1
-        fstp    qword [sel_frxw + 8]
+        fstp    qword [BS_FRX + 8]
         ret
 
 ; --- colour ----------------------------------------------------------------
@@ -2167,16 +2090,6 @@ pal_a:
         call    BS_PALSETA
         add     esp, 8
         jmp     BS_PALRETA
-pal_b:
-        mov     edx, BS_PALB
-        call    bosspal
-        test    eax, eax
-        jz      BS_PALFIXB
-        push    eax
-        push    dword [ebp + 8]
-        call    BS_PALSETB
-        add     esp, 8
-        jmp     BS_PALRETB
 
 ; edx the copy's palette table. eax the palette the player's boss wears
 ; for this id, or 0 to load its own.
@@ -2221,7 +2134,6 @@ bosspal:
 %endmacro
 
         POSE    pose_a, BS_MFRAMEA
-        POSE    pose_b, BS_MFRAMEB
 
 ; --- PLAYER DATA -----------------------------------------------------------
 
@@ -2264,7 +2176,6 @@ bosspal:
 %%now:  push    dword [BS_RFLAG]
         push    dword [SEMUTE]
         push    dword [BS_ZMODA]
-        push    dword [BS_ZMODB]
         mov     dword [SEMUTE], 1
         call    %4
         mov     esi, %15            ; Jaguarandi's size, or Z-Gradt's
@@ -2294,14 +2205,17 @@ bosspal:
         cmp     dword [ebx + 0x64], ZGRADT
         jne     %%tick
         mov     word [ebx + 0x34], 0 ; level: its draw pitches it by this
-        call    %12                 ; Z-Gradt's moves would carry it off
+        mov     eax, [ebx + 0x6c]   ; its own model header, as the game's
+        test    eax, eax            ; per-frame routines set it before
+        jz      %%draw              ; they draw (kept and put back above)
+        mov     [BS_ZMODA], eax
+%%draw: call    %12                 ; Z-Gradt's moves would carry it off
         jmp     %%drawn             ; round its arena: the draw alone
 %%tick: call    %17                 ; its per-frame routine, or its draw
 %%drawn:
         add     esp, 4
         mov     byte [rmbase_on], 0
         call    %5
-        pop     dword [BS_ZMODB]
         pop     dword [BS_ZMODA]
         pop     dword [SEMUTE]
         pop     dword [BS_RFLAG]
@@ -2313,21 +2227,20 @@ bosspal:
         ret
 %endmacro
 
-        BOSSMODEL model_ra, BS_RPARTA, BS_OBJA, BS_MPUSHA, BS_MPOPA,                   BS_MSCALEA, BS_BSSA, aisave_a, BS_MATA, stand_a,                   standai_a, BS_ZDRAWA, BS_FXA, BS_FX2A, rm_jag, rm_z, [ebx + 4]
 ; While an unlock shows, the model is the boss unlocked, the CPU's: its
 ; standing copy (unl_tick) at the CPU's object, drawn alone - its
 ; per-frame routine runs the CPU's moves, which twitched it now and then.
 ; The player's Jaguarandi stands as on the unlock: its select pose, at
 ; the unlock's size and place.
-model_rb:
+model_ra:
         cmp     dword [unl_on], 0
-        jne     model_ub
+        jne     model_ua
         cmp     dword [esp + 4], JAG
-        je      model_rbj
-        jmp     model_rbp
-        BOSSMODEL model_ub, BS_RPARTB, BS_CPUB, BS_MPUSHB, BS_MPOPB,                   BS_MSCALEB, BS_BSSB, aisave_b, BS_MATB, stand_cb,                   standai_cb, unl_zdraw, BS_FXB, BS_FX2B, urm_jag, urm_z, unl_jdraw
-        BOSSMODEL model_rbp, BS_RPARTB, BS_OBJB, BS_MPUSHB, BS_MPOPB,                   BS_MSCALEB, BS_BSSB, aisave_b, BS_MATB, stand_b,                   standai_b, BS_ZDRAWB, BS_FXB, BS_FX2B, rm_jag, rm_z, [ebx + 4]
-        BOSSMODEL model_rbj, BS_RPARTB, BS_OBJB, BS_MPUSHB, BS_MPOPB,                   BS_MSCALEB, BS_BSSB, aisave_b, BS_MATB, stand_b,                   standai_b, BS_ZDRAWB, BS_FXB, BS_FX2B, rrm_jag, rm_z, unl_jdraw
+        je      model_raj
+        jmp     model_rap
+        BOSSMODEL model_ua, BS_RPARTA, BS_CPUA, BS_MPUSHA, BS_MPOPA,                   BS_MSCALEA, BS_BSSA, aisave_a, BS_MATA, stand_ca,                   standai_ca, unl_zdraw, BS_FXA, BS_FX2A, urm_jag, urm_z, unl_jdraw
+        BOSSMODEL model_rap, BS_RPARTA, BS_OBJA, BS_MPUSHA, BS_MPOPA,                   BS_MSCALEA, BS_BSSA, aisave_a, BS_MATA, stand_a,                   standai_a, BS_ZDRAWA, BS_FXA, BS_FX2A, rm_jag, rm_z, [ebx + 4]
+        BOSSMODEL model_raj, BS_RPARTA, BS_OBJA, BS_MPUSHA, BS_MPOPA,                   BS_MSCALEA, BS_BSSA, aisave_a, BS_MATA, stand_a,                   standai_a, BS_ZDRAWA, BS_FXA, BS_FX2A, rrm_jag, rm_z, unl_jdraw
 
 ; The unlock's model, as the select stands it: Z-Gradt still in its
 ; stance's first frame, Jaguarandi posed by Raiden's select motions (the
@@ -2339,14 +2252,14 @@ unl_zdraw:
         mov     eax, SEL_ZFILE
         call    sel_loadrb
         call    sel_slotsin
-        call    BS_MPUSHB
+        call    BS_MPUSHA
         push    dword [ebx + 0x10]
         push    dword [ebx + 0xc]
         push    dword [ebx + 8]
-        call    BS_TRANSB
+        call    BS_TRANSA
         add     esp, 12
         call    selzdraw
-        call    BS_MPOPB
+        call    BS_MPOPA
         call    sel_slotsout
         pop     ebx
         ret
@@ -2359,21 +2272,21 @@ unl_jdraw:
         mov     eax, SEL_JAGFILE
         call    sel_loadrb
         call    sel_slotsin
-        call    BS_MPUSHB
+        call    BS_MPUSHA
         push    dword [ebx + 0x10]
         push    dword [ebx + 0xc]
         push    dword [ebx + 8]
-        call    BS_TRANSB
+        call    BS_TRANSA
         add     esp, 12
-        mov     byte [seljagdraw], 1 ; with its head (selpart_b)
+        mov     byte [seljagdraw], 1 ; with its head (selpart_a)
         push    0
         push    0
         push    0
         push    JAG
-        call    selmdl_b.draw
+        call    selmdl_a.draw
         add     esp, 16
         mov     byte [seljagdraw], 0
-        call    BS_MPOPB
+        call    BS_MPOPA
         call    sel_slotsout
         pop     ebx
         ret
@@ -2400,7 +2313,6 @@ unl_jdraw:
 %endmacro
 
         IDENT   ident_a, BS_IDENTA, BS_MATA
-        IDENT   ident_b, BS_IDENTB, BS_MATB
 
 ; A machine's shadow is the machine again, flattened onto the ground below
 ; it; on the report the ground is wherever the turntable puts it. While the
@@ -2417,7 +2329,6 @@ unl_jdraw:
 %endmacro
 
         NOSHADE noshade_a, BS_LIGHTA, BS_SHADEA, BS_NOSHADEA
-        NOSHADE noshade_b, BS_LIGHTB, BS_SHADEB, BS_NOSHADEB
 
 ; Z-Gradt's shadow, the same: in place of its first test, cmp [timer], 0x9a.
 %macro NOZSHADE 4                   ; label, the timer, past it, the skip
@@ -2430,7 +2341,6 @@ unl_jdraw:
 %endmacro
 
         NOZSHADE nozshade_a, BS_ZSHTA, BS_ZSHADEA, BS_ZNOSHADEA
-        NOZSHADE nozshade_b, BS_ZSHTB, BS_ZSHADEB, BS_ZNOSHADEB
 
 
 ; Its machine name comes from a table of the eight as well. In place of
@@ -2453,7 +2363,6 @@ unl_jdraw:
 %endmacro
 
         NAME    name_a, BS_G1PA, BS_NAMEA
-        NAME    name_b, BS_G1PB, BS_NAMEB
 
 ; --- unlocking -------------------------------------------------------------
 
@@ -2468,12 +2377,15 @@ unl_jdraw:
 ; set the screen up) does the unlock's frames instead while unl_on names
 ; the boss, and the report's text is not drawn. The model is the report's
 ; turning one, the boss's standing copy from its last round drawn at the
-; CPU's object (model_ub); the text is YOU UNLOCKED and the boss's name as
-; the select shows it. SDB_title plays under it. After it, Jaguarandi's
-; goes on to the report, and Z-Gradt's to the initials.
+; CPU's object (model_ua); the text is YOU UNLOCKED and the boss's name as
+; the select shows it. SDB_title plays under it. A press is answered with
+; the select's cursor sound and the model gone; once it is let go,
+; Jaguarandi's goes on to the report, and Z-Gradt's to the initials.
 ;
-; Only B, the copy a one-player game is played on.
+; Only A, the copy a one-player game is played on.
 UNL_TITLE   equ 0x101a              ; SDB_title
+UNL_PRESSED equ 0x12                ; SDE_type_05, the select's cursor
+                                    ; sound: a press taken
 UNL_TXT1    equ 30                  ; frames: YOU UNLOCKED, the name,
 UNL_TXT2    equ 60
 UNL_PROMPT  equ 300                 ; near SDB_title's end: PRESS BUTTON TO
@@ -2483,14 +2395,16 @@ UNL_PROMPTH equ 2                   ; covers, cleared
 UNL_NJ      equ 0x22 * 2            ; the names' tiles, Jaguarandi's
 UNL_NZ      equ 0x1a * 3            ; and Z-Gradt's
 UNL_TILE    equ 0x80                ; a tile's bytes
-ST_SELECT   equ 4                   ; B's state on the select
+ST_SELECT   equ 4                   ; A's state on the select
 UNL_BUTTONS equ 0x10110             ; the buttons that end the report, as
                                     ; held (BS_PADEDGE is held, not pressed)
-ST_REPORT   equ 0x1c                ; B's states: the report's start,
+ST_REPORT   equ 0x1c                ; A's states: the report's start,
 ST_INITIALS equ 0x16                ; the initials, the last fight won,
 ST_ZWON     equ 0x1f                ; and the rounds
 ST_ROUND    equ 0x0a
 ST_ROUNDZ   equ 0x0b
+ST_NEWGAME  equ 2                   ; a new game's states, 1 and 2
+ST_TITLE    equ 4                   ; the title's states go no higher
 VERY_HARD   equ 2
 UNL_TEXB    equ 4                   ; the fights' texture bank, half 1
 
@@ -2543,14 +2457,93 @@ unl_save:
 .done:  popad
         ret
 
-; Each frame, from the tick. A new game (B through states 0 and 1, which a
-; continue does not pass) starts clean; anything but Very Hard, or two
-; players, spoils it, as a lost match does (unl_lost). The last fight won
+; The chase camera turns by its yaw at +0x1a, which the eight's movement
+; code sets from the machine's facing at +0x184 as it turns them (0x4ec6a2
+; and around it); Z-Gradt moves by its own code, which does not, so the
+; camera stayed put as it turned on the spot. In a round, the player's
+; Z-Gradt's facing goes to the camera each frame, as the eight's does.
+UNL_FACING  equ 0x184
+UNL_CAMYAW  equ 0x1a
+
+; Z-Gradt has no jump, and turns only standing still. For the player's,
+; the jump - both levers out, 0x0206 in the machine's lever word at +0x108
+; (the low byte the right lever's direction, the high the left's) - turns
+; it to face the CPU instead, ZL_STEP a frame, as the eight face their
+; target as they jump. The angle is the CPU's own way of aiming a machine
+; (0x4450e4): atan2(own x - target x, target z - own z) in the facing's
+; units. The facing turns, and the model and the camera follow it as they
+; do Z-Gradt's own turn, so its turrets, its ring beams' heads and its
+; laser all aim from the way it faces. Not while the super laser is out,
+; which fires along the facing. Once GET READY is up and it has landed.
+ZL_JUMP     equ 0x0206
+ZL_STEP     equ 0x200               ; a frame: a half turn in 64
+ZL_LASER    equ 0x1c4               ; the laser's state in A's AI block
+UNL_LEVERS  equ 0x108
+UNL_X       equ 8
+UNL_Z       equ 0x10
+
+zlock:
+        movzx   eax, word [BS_OBJA + UNL_LEVERS]
+        xchg    eax, [zl_prev]
+        cmp     dword [BS_READYA], READY_GO
+        jl      .off                ; no GET READY yet
+        cmp     dword [BS_STAGEA], LAST_STAGE ; there the timer is the
+        je      .landed             ; CPU's, the player's not flying in
+        cmp     dword [BS_ZTIMA], 0
+        jge     .off                ; still flying in
+.landed:
+        mov     ecx, BS_BSSA        ; the player's laser state, banked on
+        cmp     dword [banked_a], 0 ; the last stage (as ZEND)
+        je      .live
+        mov     ecx, bank_a
+.live:  cmp     dword [ecx + ZL_LASER], 0
+        jl      .free
+        mov     dword [zl_on], 0    ; the laser out: no lock-on
+        ret
+.free:  cmp     eax, ZL_JUMP        ; held from before: no new press
+        je      .turn
+        cmp     word [BS_OBJA + UNL_LEVERS], ZL_JUMP
+        jne     .turn
+        mov     dword [zl_on], 1
+.turn:  cmp     dword [zl_on], 0
+        je      .done
+        fld     dword [BS_OBJA + UNL_X]
+        fsub    dword [BS_CPUA + UNL_X]
+        fld     dword [BS_CPUA + UNL_Z]
+        fsub    dword [BS_OBJA + UNL_Z]
+        fpatan
+        fdiv    dword [sel_zturn]
+        fistp   dword [zl_ang]
+        mov     eax, [zl_ang]
+        sub     ax, [BS_OBJA + UNL_FACING]
+        movsx   eax, ax             ; the way round that is shorter
+        cmp     eax, ZL_STEP
+        jle     .lo
+        mov     eax, ZL_STEP
+        jmp     .step
+.lo:    cmp     eax, -ZL_STEP
+        jge     .last
+        mov     eax, -ZL_STEP
+        jmp     .step
+.last:  mov     dword [zl_on], 0    ; facing it this frame
+.step:  add     [BS_OBJA + UNL_FACING], ax
+.done:  ret
+.off:   mov     dword [zl_on], 0
+        ret
+
+; Each frame, from the tick. A game starts clean as B passes state 1 or 2,
+; which only a new game does (0, 1 or 2, then the select); a continue goes
+; from the lost match's states through 0 to the select, and between stages
+; through 0 and 3. The game's own count of lost matches will not do: it is
+; cleared whenever another machine is chosen. Anything but Very Hard, or
+; two players, spoils it, as a lost match does (unl_lost). The last fight won
 ; is noted for the initials' hook. And in a round the CPU's boss is taken
 ; standing, as the player's is, for the unlock's model.
 unl_tick:
         pushad
-        cmp     dword [BS_STATEB], 1
+        mov     eax, [BS_STATEA]
+        dec     eax
+        cmp     eax, ST_NEWGAME - 1
         ja      .play
         mov     dword [unl_clean], 1
         mov     dword [unl_zwon], 0
@@ -2559,16 +2552,16 @@ unl_tick:
         cmp     dword [GAMEMODE], 0
         je      .won
 .dirty: mov     dword [unl_clean], 0
-.won:   cmp     dword [BS_STATEB], ST_ZWON
+.won:   cmp     dword [BS_STATEA], ST_ZWON
         jne     .round
-        cmp     dword [BS_STAGEB], LAST_STAGE
+        cmp     dword [BS_STAGEA], LAST_STAGE
         jne     .round
         mov     dword [unl_zwon], 1
 .round:
-        mov     eax, [BS_STATEB]
+        mov     eax, [BS_STATEA]
         cmp     eax, ST_SELECT
         jne     .notsel
-        movzx   ecx, word [BS_SCENEB]
+        movzx   ecx, word [BS_SCENEA]
         sub     ecx, SELECT_LO
         cmp     ecx, SELECT_HI - SELECT_LO
         jae     .out
@@ -2579,7 +2572,12 @@ unl_tick:
         je      .stand
         cmp     eax, ST_ROUNDZ
         jne     .out
-.stand: STAND   BS_CPUB, BS_READYB, BS_BSSB, stand_cb, standai_cb, stood_cb
+.stand: STAND   BS_CPUA, BS_READYA, BS_BSSA, stand_ca, standai_ca, stood_ca
+        cmp     dword [boss], ZGRADT ; the player's Z-Gradt: the camera
+        jne     .out                ; turns with it (UNL_CAMYAW)
+        call    zlock
+        mov     ax, [BS_OBJA + UNL_FACING]
+        mov     [BS_ECBLKA + UNL_CAMYAW], ax
 .out:   popad
         ret
 
@@ -2718,7 +2716,7 @@ unl_palsave:
         jne     .out
         pushad
         cld
-        mov     esi, BS_PALRAMB
+        mov     esi, BS_PALRAMA
         mov     edi, unl_pals
         mov     ecx, UNL_PALS / 4
         rep movsd
@@ -2732,7 +2730,7 @@ unl_palback:
         pushad
         cld
         mov     esi, unl_pals
-        mov     edi, BS_PALRAMB
+        mov     edi, BS_PALRAMA
         mov     ecx, UNL_PALS / 4
         rep movsd
         mov     byte [unl_palin], 0
@@ -2830,19 +2828,19 @@ unl_ok:
 
 ; In place of `inc [lost matches]`, a nop after the call.
 unl_lost:
-        inc     dword [BS_LOSSB]
+        inc     dword [BS_LOSSA]
         mov     dword [unl_clean], 0
         ret
 
 ; In place of `mov [state], 0x1c` once stage 5, Jaguarandi's, is won;
 ; five nops after the call.
 unl_jag:
-        mov     dword [BS_STATEB], ST_REPORT
+        mov     dword [BS_STATEA], ST_REPORT
         call    unl_ok
         jne     .out
         cmp     dword [unl_level], 0
         jne     .out
-        cmp     dword [BS_CPUB + 0x64], JAG
+        cmp     dword [BS_CPUA + 0x64], JAG
         jne     .out
         mov     dword [unl_level], 1
         call    unl_save
@@ -2869,24 +2867,24 @@ unl_z:
         call    unl_scnsave
         mov     dword [unl_on], ZGRADT
         mov     dword [unl_t], 0
-        mov     dword [BS_STATEB], ST_REPORT
+        mov     dword [BS_STATEA], ST_REPORT
         ret
 .initials:
-        mov     dword [BS_STATEB], ST_INITIALS
+        mov     dword [BS_STATEA], ST_INITIALS
         ret
 
 ; In place of the call of the report's text: none while an unlock shows.
 unl_text:
         cmp     dword [unl_on], 0
         jne     .out
-        jmp     BS_REPTEXTB
+        jmp     BS_REPTEXTA
 .out:   ret
 
-; B's state 0x1e, from its table.
+; A's state 0x1e, from its table.
 unl_logic:
         cmp     dword [unl_on], 0
         jne     .unlock
-        jmp     BS_REPLOGICB
+        jmp     BS_REPLOGICA
 .unlock:
         pushad
         cmp     dword [unl_t], 0
@@ -2904,7 +2902,7 @@ unl_logic:
         lea     eax, [ebx + i]
         push    eax
         push    1 + 2 * i
-        call    BS_PALLOADB
+        call    BS_PALLOADA
         add     esp, 8
 %assign i i + 1
 %endrep
@@ -2915,7 +2913,7 @@ unl_logic:
         lea     eax, [ebx + i]
         push    eax
         push    dword [edi + 4 * i]
-        call    BS_PALLOADB
+        call    BS_PALLOADA
         add     esp, 8
 %assign i i + 1
 %endrep
@@ -2931,7 +2929,7 @@ unl_logic:
         call    BS_TRESET
         push    dword [unl_y1]
         push    dword [unl_x1]
-        call    BS_TXTPOSB
+        call    BS_TXTPOSA
         add     esp, 8
         push    unl_you
         call    BS_PRINTBIG
@@ -2944,16 +2942,18 @@ unl_logic:
         sub     ebx, JAG
         push    dword [unl_y2]
         push    dword [unl_x2 + ebx * 4]
-        call    BS_TXTPOSB
+        call    BS_TXTPOSA
         add     esp, 8
         imul    ebx, ebx, SEL_TXT
         add     ebx, seltxt
         push    dword [ebx + SEL_LOGO + 8]
         push    dword [ebx + SEL_LOGO + 4]
         push    unl_map
-        call    BS_TBLOCKB
+        call    BS_TBLOCKA
         add     esp, 12
-.model: fild    dword [unl_t]       ; growing to the report's size
+.model: cmp     byte [unl_go], 0    ; pressed: gone (as the screen ends
+        jne     .drawn              ; it would wear the player's colours)
+        fild    dword [unl_t]       ; growing to the report's size
         fmul    dword [unl_grow]
         fld     dword [unl_size]
         fcomi   st0, st1
@@ -2961,15 +2961,15 @@ unl_logic:
         fstp    st1
         sub     esp, 4
         fstp    dword [esp]
-        push    dword [BS_G1PB]     ; the model is the player's machine's:
+        push    dword [BS_G1PA]     ; the model is the player's machine's:
         mov     eax, [unl_on]       ; the boss's for it
-        mov     [BS_G1PB], eax
+        mov     [BS_G1PA], eax
         push    dword [esp + 4]
-        call    BS_REPMODELB
+        call    BS_REPMODELA
         add     esp, 4
-        pop     dword [BS_G1PB]
+        pop     dword [BS_G1PA]
         add     esp, 4
-        mov     eax, [unl_t]
+.drawn: mov     eax, [unl_t]
         sub     eax, UNL_PROMPT
         jb      .next
         test    eax, UNL_FLASH - 1
@@ -2977,7 +2977,7 @@ unl_logic:
         mov     ebx, eax
         push    dword [unl_py]      ; on, or off
         push    dword [unl_px]
-        call    BS_TXTPOSB
+        call    BS_TXTPOSA
         add     esp, 8
         test    ebx, UNL_FLASH
         jnz     .off
@@ -2987,7 +2987,7 @@ unl_logic:
         jmp     .button
 .off:   push    UNL_PROMPTH
         push    UNL_PROMPTW
-        call    BS_TCLEARB
+        call    BS_TCLEARA
         add     esp, 8
 .button:                            ; a press made since, then let go:
         mov     eax, [BS_PADEDGE]   ; the buttons are held ones, and the
@@ -3000,6 +3000,9 @@ unl_logic:
         test    eax, ecx
         jz      .next
         mov     byte [unl_go], 1
+        push    UNL_PRESSED         ; heard
+        call    BS_SFX
+        add     esp, 4
         jmp     .next
 .release:
         test    eax, eax
@@ -3025,7 +3028,7 @@ unl_logic:
         mov     dword [unl_t], 0
         mov     eax, [unl_on]
         mov     dword [unl_on], 0
-        mov     dword [BS_STATEB], ST_REPORT ; Jaguarandi's: the report
+        mov     dword [BS_STATEA], ST_REPORT ; Jaguarandi's: the report
         cmp     eax, JAG
         je      .out
         call    unl_scnback         ; Z-Gradt's: the fight's scene and
@@ -3035,9 +3038,9 @@ unl_logic:
         push    dword [unl_texb]
         call    BS_LOADTEX
         add     esp, 8
-        mov     word [BS_SCENEB], 0x91 ; and the initials, as the
-        mov     dword [BS_EVB], 0x81 ; credits go to them
-        mov     dword [BS_STATEB], ST_INITIALS
+        mov     word [BS_SCENEA], 0x91 ; and the initials, as the
+        mov     dword [BS_EVA], 0x81 ; credits go to them
+        mov     dword [BS_STATEA], ST_INITIALS
 .out:   popad
         ret
 
@@ -3050,11 +3053,6 @@ loads_a:
         cmp     eax, JAG
         jae     BS_LDXA
         jmp     BS_LDA
-loads_b:
-        mov     eax, [BS_IDB]
-        cmp     eax, JAG
-        jae     BS_LDXB
-        jmp     BS_LDB
 
 ; After those, a deref of the same tables and the looping stand overlay.
 deref_a:
@@ -3063,12 +3061,6 @@ deref_a:
         cmp     dword [ebp + DR_FLAG], 0
         je      BS_DRJA
         jmp     BS_DRFA
-deref_b:
-        cmp     dword [BS_IDB], JAG
-        jae     BS_DRSB
-        cmp     dword [ebp + DR_FLAG], 0
-        je      BS_DRJB
-        jmp     BS_DRFB
 
 ; Mode 0xa: the same extras as 0x80 rather than the deref.
 case2_a:
@@ -3076,11 +3068,6 @@ case2_a:
         cmp     eax, JAG
         jae     BS_LDXA
         jmp     BS_C2A
-case2_b:
-        mov     eax, [BS_IDB]
-        cmp     eax, JAG
-        jae     BS_LDXB
-        jmp     BS_C2B
 
 ; --- the ending ------------------------------------------------------------
 
@@ -3137,8 +3124,6 @@ RAIDEN      equ 3
 
         ENDING  end_a, BS_IDA, BS_MDLA, BS_JAGA, BS_ZGA, BS_PHASEA, \
                 BS_TIMEA, BS_ENDA, BS_END1A, BS_ENDEA, BS_ENDWA, BS_G1PA
-        ENDING  end_b, BS_IDB, BS_MDLB, BS_JAGB, BS_ZGB, BS_PHASEB, \
-                BS_TIMEB, BS_ENDB, BS_END1B, BS_ENDEB, BS_ENDWB, BS_G1PB
 
 ; Z-Gradt's part. Its per-frame routine runs the script as the others' do,
 ; and the script sets the charge going (the timer at 1). Z-Gradt's goes:
@@ -3343,9 +3328,7 @@ BALBAS      equ 7                   ; whose shot code takes only its own slots
 %endmacro
 
         ZEND    zend_a, BS_PH0A, BS_OBJA, BS_IDA, BS_ESTEPA, BS_TIMEA, \
-                BS_BSSA, bank_a, banked_a, 0x1cc, BS_G1PA, BS_EVA, BS_SPDA
-        ZEND    zend_b, BS_PH0B, BS_OBJB, BS_IDB, BS_ESTEPB, BS_TIMEB, \
-                BS_BSSB, bank_b, banked_b, 0x1c4, BS_G1PB, BS_EVB, BS_SPDB
+                BS_BSSA, bank_a, banked_a, 0x1c4, BS_G1PA, BS_EVA, BS_SPDA
 
 ; Each segment of Z-Gradt's beam, a step at a time, asks the arena how high
 ; its floor is where it has got to, and stops there if under it: outside
@@ -3362,7 +3345,6 @@ BALBAS      equ 7                   ; whose shot code takes only its own slots
 %endmacro
 
         ZWALL   zwall_a, BS_WALLA
-        ZWALL   zwall_b, BS_WALLB
 
 ; The beam's segments go out a step a frame for so many frames, their step
 ; the speed of their kind of weapon slot; ZEND makes it ZSPD_K times as
@@ -3412,7 +3394,6 @@ zbeam_off:
 %endmacro
 
         ZBEAM   zbeam_a, BS_OBJA, BS_IDA, BS_TIMEA, BS_SCANA, BS_FOUNDA
-        ZBEAM   zbeam_b, BS_OBJB, BS_IDB, BS_TIMEB, BS_SCANB, BS_FOUNDB
 
 ; The ending's camera puts the eye a set way from what it looks at, sized
 ; for the eight, and builds the view from the two: turned to look from the
@@ -3501,22 +3482,14 @@ ESTEP_TURN  equ 0x23a               ; the ending's step the turn starts at
 ESTEP_FADE  equ 64
 
         ETRANS  etrans_a, BS_ETRA, BS_ECBLKA, BS_IDA, BS_ESTEPA, BS_TIMEA
-        ETRANS  etrans_b, BS_ETRB, BS_ECBLKB, BS_IDB, BS_ESTEPB, BS_TIMEB
 
 ; --- Z-Gradt's chase camera ------------------------------------------------
 
 ; Z-Gradt is several times the size of the eight, and the chase camera
-; puts the eye inside it. Is the player one, by any of the places that say?
-; ZF set if so.
+; puts the eye inside it. Is the player one? ZF set if so.
 is_zgradt:
-        cmp     dword [BS_IDA], ZGRADT
-        je      .out
-        cmp     dword [BS_G1PA], ZGRADT
-        je      .out
-        cmp     dword [BS_IDB], ZGRADT
-        je      .out
-        cmp     dword [BS_G1PB], ZGRADT
-.out:   ret
+        cmp     dword [boss], ZGRADT
+        ret
 
 ; In place of a call to the view translate: [esp+4..0xc] are the eye's
 ; negated X, Y and Z. Pull it back along the yaw it was placed by.
@@ -3543,10 +3516,8 @@ is_zgradt:
 
 ; One stub per yaw: the first two sites share one, as do the last two.
 ; The replay's call is not one of them: REPLAY below aims it properly.
-        PULL    cam_1, BS_VIEWA, BS_SINA, BS_COSA, BS_YAW1
-        PULL    cam_2, BS_VIEWA, BS_SINA, BS_COSA, BS_YAW2
-        PULL    cam_4, BS_VIEWB, BS_SINB, BS_COSB, BS_YAW4
-        PULL    cam_5, BS_VIEWB, BS_SINB, BS_COSB, BS_YAW5
+        PULL    cam_4, BS_VIEWA, BS_SINA, BS_COSA, BS_YAW4
+        PULL    cam_5, BS_VIEWA, BS_SINA, BS_COSA, BS_YAW5
 
 ; The live camera, once its distance at 0x40 is final: four times it for
 ; Z-Gradt. In place of `mov eax, [ebp+CAM_PTR]; movsx eax, word [eax+0x1e]`.
@@ -3567,40 +3538,35 @@ is_zgradt:
 %endmacro
 
         LIVE    live_a, BS_LIVEA
-        LIVE    live_b, BS_LIVEB
 
 ; --- Z-Gradt against Z-Gradt -----------------------------------------------
 
-; Falls through on the last stage, else jumps to %1.
-%macro LAST 1
-        cmp     dword [BS_STAGEA], LAST_STAGE
-        je      %%last
-        cmp     dword [BS_STAGEB], LAST_STAGE
+; Falls through when the player's Z-Gradt (`boss`) is on the last stage,
+; stage %2, else jumps to %1.
+%macro LAST 2
+        cmp     dword [boss], ZGRADT
         jne     %1
-%%last:
+        cmp     dword [%2], LAST_STAGE
+        jne     %1
 %endmacro
 
-; Jumps to %2 if %1 is the player's object, in either copy.
+; Jumps to %2 if %1 is the player's object.
 %macro IF_PLAYER 2
         cmp     %1, BS_OBJA
         je      %2
-        cmp     %1, BS_OBJB
-        je      %2
 %endmacro
 
-; Jumps to %1 once GET READY has been up READY_GO frames, in either copy.
+; Jumps to %1 once GET READY has been up READY_GO frames.
 %macro IF_READY 1
         cmp     dword [BS_READYA], READY_GO
-        jge     %1
-        cmp     dword [BS_READYB], READY_GO
         jge     %1
 %endmacro
 
 ; Z-Gradt's init wipes the boss globals the CPU's has just set. The
 ; player's returns before it does.
-%macro INIT 2                       ; label, resume
+%macro INIT 3                       ; label, resume, the copy's stage
 %1:
-        LAST    %%stock
+        LAST    %%stock, %3
         IF_PLAYER dword [esp + 4], %%skip
 %%stock:
         push    ebp
@@ -3612,16 +3578,16 @@ is_zgradt:
 %%skip: ret
 %endmacro
 
-        INIT    init_a, BS_INITA
-        INIT    init_b, BS_INITB
+        INIT    init_a, BS_INITA, BS_STAGEA
 
 ; The fly-in runs on a global timer and an absolute height, so a second
 ; Z-Gradt ticks the CPU's descent twice and drives it into the floor. The
 ; player's skips it: standing still until GET READY is done, then on from
 ; after the landing.
-%macro FLY 5                        ; label, resume, after landing,
-%1:                                 ; epilogue, Z-Gradt's model global
-        LAST    %%stock
+%macro FLY 6                        ; label, resume, after landing,
+%1:                                 ; epilogue, Z-Gradt's model global,
+                                    ; the copy's stage
+        LAST    %%stock, %6
         IF_PLAYER dword [esp + 4], %%skip
 %%stock:
         push    ebp
@@ -3654,14 +3620,18 @@ is_zgradt:
         jmp     %3
 %endmacro
 
-        FLY     fly_a, BS_FLYA, BS_FLYPA, BS_FLYEA, BS_ZMODA
-        FLY     fly_b, BS_FLYB, BS_FLYPB, BS_FLYEB, BS_ZMODB
+        FLY     fly_a, BS_FLYA, BS_FLYPA, BS_FLYEA, BS_ZMODA, BS_STAGEA
 
 ; The fly-in timer locks the machine until it runs out. The player's waits
-; for GET READY instead. In place of `cmp dword [timer], 0; jge skip`.
+; for GET READY instead, on every stage of a one-player game: indoors it is
+; down before GET READY is done (zflyin_a), and its own movement code does
+; not wait for the round as the eight's does - moved then, it shot across
+; the arena. On the last stage its own fly-in is skipped besides. In place
+; of `cmp dword [timer], 0; jge skip`.
 %macro TIMER 4                      ; label, timer, resume, skip
 %1:
-        LAST    %%stock
+        cmp     dword [boss], ZGRADT
+        jne     %%stock
         IF_PLAYER dword [ebp + 8], %%player
 %%stock:
         cmp     dword [%2], 0
@@ -3672,16 +3642,88 @@ is_zgradt:
         jmp     %4
 %endmacro
 
-        TIMER   tm_1, BS_ZTIMA, BS_TM1, BS_TM1S
-        TIMER   tm_2, BS_ZTIMB, BS_TM2, BS_TM2S
-        TIMER   tm_3, BS_ZTIMA, BS_TM3, BS_TM3S
-        TIMER   tm_4, BS_ZTIMB, BS_TM4, BS_TM4S
+; The player's Z-Gradt's fly-in runs on the timer: under 120 it comes in
+; along the arena at height 70, to 200 it slows and pitches over, then it
+; drops till it lands. Where the arena is in the way it starts later
+; (zf_start, by the arena loaded): indoors - Deathtrap, Spaceport, the
+; Secret Base (FC_Fact, FC_Dock, FC_Core) - at 199, the one frame before
+; the drop putting it in place, so it only drops; halfway, at 100, where
+; it flew through the Flooded City's buildings and the Ruins (FC_Tro,
+; FC_Inka); and at 60 for the Green Hills' mountains (FC_Fore). Its place is worked
+; out from the timer each frame; its pitch is set as the frames skipped
+; would have left it. In place of Z-Gradt's init's `mov dword [fly-in
+; timer], 0`, five nops after the call; [ebp+8] the object.
+ZF_SLOW     equ 120                 ; the timer: slowing, pitching over
+ZF_LEVEL    equ 0x4000              ; the pitch till then, and its easing
+ZF_EASE     equ 0x80                ; a frame after
+ZF_OBJPITCH equ 0x34
+ZF_ARENAS   equ 10
+zflyin_a:
+        mov     dword [BS_ZTIMA], 0
+        mov     dword [zl_on], 0    ; a lock-on ends with the round
+        cmp     dword [boss], ZGRADT
+        jne     .out
+        push    eax
+        push    ecx
+        mov     eax, [ebp + 8]
+        cmp     eax, BS_OBJA        ; the player's
+        jne     .kept
+        mov     ecx, [BS_ARENA]
+        cmp     ecx, ZF_ARENAS
+        jae     .kept
+        mov     ecx, [zf_start + ecx * 4]
+        test    ecx, ecx
+        jz      .kept
+        mov     [BS_ZTIMA], ecx
+        sub     ecx, ZF_SLOW        ; pitched as the frames before leave it
+        jge     .ease
+        xor     ecx, ecx
+.ease:  imul    ecx, ecx, ZF_EASE
+        neg     ecx
+        add     ecx, ZF_LEVEL
+        mov     [eax + ZF_OBJPITCH], cx
+.kept:  pop     ecx
+        pop     eax
+.out:   ret
+
+; The round starts - its clock, its music - as GET READY's count runs
+; out, which is long before Z-Gradt is down from its descent. In a
+; one-player game with the player as Z-Gradt, the count is held at its end
+; while the fly-in timer runs (it is -1 once landed), ZR_MAX frames at
+; most. Not on the last stage: the player's does not fly in there, and the
+; timer is the CPU's, whose descent the stock count does not wait for. In
+; place of A's
+; `cmp dword [count], 0` before the round starts, two nops after; the
+; flags are the answer.
+ZR_MAX      equ 600
+zready_a:
+        cmp     dword [BS_RCOUNTA], 0
+        jne     .out
+        cmp     dword [boss], ZGRADT
+        jne     .go
+        cmp     dword [BS_STAGEA], LAST_STAGE ; there the player's does not
+        je      .go                 ; fly in, the timer the CPU's: as stock
+        cmp     dword [BS_ZTIMA], 0
+        jl      .go                 ; down
+        cmp     dword [zr_wait], ZR_MAX
+        jae     .go
+        inc     dword [zr_wait]
+        mov     dword [BS_RCOUNTA], 1 ; back to 0 next frame, asked again
+        cmp     esp, 0              ; not yet
+.out:   ret
+.go:    mov     dword [zr_wait], 0
+        cmp     dword [BS_RCOUNTA], 0
+        ret
+
+        TIMER   tm_2, BS_ZTIMA, BS_TM2, BS_TM2S
+        TIMER   tm_4, BS_ZTIMA, BS_TM4, BS_TM4S
 
 ; Which clip bank an object animates from: the pad's for the player, the
 ; AI's for a Z-Gradt that is not. eax is the object.
-%macro CLIP 3                       ; label, bank 0, bank 3
+%macro CLIP 4                       ; label, bank 0, bank 3, the copy's
+                                    ; stage
 %1:
-        LAST    %%stock
+        LAST    %%stock, %4
         IF_PLAYER eax, %2
         cmp     dword [eax + 0x64], ZGRADT
         je      %3
@@ -3692,12 +3734,12 @@ is_zgradt:
         jmp     %2
 %endmacro
 
-        CLIP    clip_a, BS_CLIP0A, BS_CLIP3A
-        CLIP    clip_b, BS_CLIP0B, BS_CLIP3B
+        CLIP    clip_a, BS_CLIP0A, BS_CLIP3A, BS_STAGEA
 
 ; The player's Z-Gradt gets its own copy of the model header, made once,
 ; so the CPU's writes to it do not move both.
-%macro CLONE 4                      ; label, resume, copy, copied flag
+%macro CLONE 5                      ; label, resume, copy, copied flag,
+                                    ; the copy's stage
 %1:
         push    ebp
         mov     ebp, esp
@@ -3705,7 +3747,7 @@ is_zgradt:
         push    ebx
         push    esi
         push    edi
-        LAST    %2
+        LAST    %2, %5
         mov     eax, [ebp + 8]
         IF_PLAYER eax, %%player
         jmp     %2
@@ -3716,10 +3758,8 @@ is_zgradt:
         cmp     ecx, %3
         je      %2
         cmp     ecx, BS_ZGA
-        je      %%z
-        cmp     ecx, BS_ZGB
         jne     %2
-%%z:    cmp     dword [%4], 0
+        cmp     dword [%4], 0
         jne     %%point
         mov     esi, ecx
         mov     edi, %3
@@ -3737,8 +3777,7 @@ is_zgradt:
         jmp     %2
 %endmacro
 
-        CLONE   clone_a, BS_CLONEA, copy_a, copied_a
-        CLONE   clone_b, BS_CLONEB, copy_b, copied_b
+        CLONE   clone_a, BS_CLONEA, copy_a, copied_a, BS_STAGEA
 
 ; dst, src: one block of Z-Gradt's AI state.
 %macro COPYAI 2
@@ -3767,11 +3806,12 @@ ZTAB_4      equ 0x260
 ; in around the call. The copy starts as the CPU's, just initialised - a
 ; zero one sends 0x1ad01c4 through a NULL - with the three timers the init
 ; sets to -1 set again.
-%macro AI 13        ; label, resume, live state, bank, scratch, flag,
-                    ; three offsets set to -1, and the offsets of the
-                    ; four words the side's tables go in
+%macro AI 14        ; label, resume, live state, bank, scratch, flag,
+                    ; three offsets set to -1, the offsets of the
+                    ; four words the side's tables go in, and the
+                    ; copy's stage
 %1:
-        LAST    %%stock
+        LAST    %%stock, %14
         IF_PLAYER dword [esp + 4], %%wrap
 %%stock:
         push    ebp
@@ -3815,33 +3855,7 @@ ZTAB_4      equ 0x260
 %endmacro
 
         AI      ai_a, BS_TICKA, BS_BSSA, bank_a, scratch_a, banked_a, \
-                0x24, 0x1c0, 0x1cc, 0x1c4, 0x1c8, 0xc, 0xd8
-        AI      ai_b, BS_TICKB, BS_BSSB, bank_b, scratch_b, banked_b, \
-                0x1c, 0x1b8, 0x1c4, 0x1bc, 0x1c0, 0x4, 0xd0
-
-; In place of each `mov eax, [model global]` in Z-Gradt's code: on the last
-; stage, the model of whichever fight object the function was given.
-%macro MODEL 2                      ; label, the global
-%1:
-        LAST    %%global
-        mov     eax, [ebp + 8]
-        IF_PLAYER eax, %%own
-        cmp     eax, BS_CPUA
-        je      %%own
-        cmp     eax, BS_CPUB
-        je      %%own
-%%global:
-        mov     eax, [%2]
-        ret
-%%own:
-        mov     eax, [eax + 0x6c]
-        test    eax, eax
-        jz      %%global
-        ret
-%endmacro
-
-        MODEL   model_a, BS_ZMODA
-        MODEL   model_b, BS_ZMODB
+                0x1c, 0x1b8, 0x1c4, 0x1bc, 0x1c0, 0x4, 0xd0, BS_STAGEA
 
 ; Every machine's object is set up with attack 1, a weapon's at rest; for
 ; Z-Gradt, attack 1 fires its ring lasers. The CPU's has its AI to take
@@ -3863,7 +3877,6 @@ ZTAB_4      equ 0x260
 %endmacro
 
         ZINIT   zinit_a, BS_ZINITA
-        ZINIT   zinit_b, BS_ZINITB
 
 ; Z-Gradt's fly-in (0x407dd1, its counter f in the AI state), backwards,
 ; as offsets from where it stands: f from 0 it comes 20 a frame from far
@@ -3968,7 +3981,6 @@ zflyout:
 %endmacro
 
         ZFLY    zfly_draw_a, BS_ZDRAWA
-        ZFLY    zfly_draw_b, BS_ZDRAWB
 
 ; Swaps Z-Gradt's joint frames, its laser's count and Raiden's flag, eax's,
 ; with ZEND's copy. eax kept.
@@ -4020,7 +4032,6 @@ zswap:
 %endmacro
 
         JPOSE   jpose_a, BS_MDRAWA
-        JPOSE   jpose_b, BS_MDRAWB
 
 ; --- Z-Gradt's gold --------------------------------------------------------
 
@@ -4042,7 +4053,6 @@ zswap:
 %endmacro
 
         POST    zpost_a, BS_ZEVA, BS_EVA
-        POST    zpost_b, BS_ZEVB, BS_EVB
 
 ; In place of `cmp dword [ebp+PAL_CPU], 0; je slots 1/3`, for gold.
 %macro GOLD 3                       ; label, slots 5/7, slots 1/3
@@ -4059,7 +4069,6 @@ zswap:
 %endmacro
 
         GOLD    zgold_a, BS_ZGA5, BS_ZGA1
-        GOLD    zgold_b, BS_ZGB5, BS_ZGB1
 
 ; And for 0x200: the player's own pair goes back through the loader, so a
 ; colour it was confirmed in comes back with it.
@@ -4095,7 +4104,22 @@ zswap:
 %endmacro
 
         RESTORE zrest_a, BS_ZRA5, BS_ZRA1, BS_ZRAX, BS_LOADA
-        RESTORE zrest_b, BS_ZRB5, BS_ZRB1, BS_ZRBX, BS_LOADB
+
+; As a Z-Gradt dies its palettes darken, events 0x401 to 0x43f, each range
+; with the same test of the side. A player's Z-Gradt keeps the colours it
+; was given as it collapses: what it posts there is passed over. In place
+; of `cmp dword [ebp+PAL_CPU], 0; je slots 1/3`, both ranges.
+%macro DARK 4                       ; label, slots 5/7, slots 1/3, the end
+%1:
+        cmp     byte [zmine], 0
+        jne     %4
+        cmp     dword [ebp + PAL_CPU], 0
+        je      %3
+        jmp     %2
+%endmacro
+
+        DARK    zdark_a, BS_ZDA5, BS_ZDA1, BS_ZRAX
+        DARK    zfade_a, BS_ZFA5, BS_ZFA1, BS_ZRAX
 
 ; --- the replay and the win and lose screens -----------------------------
 
@@ -4156,13 +4180,9 @@ WIN_TRIES   equ 0x10000 / 0x80
 %endmacro
 
         WIN     win_1, BS_WIND1
-        WIN     win_2, BS_WIND2
         WINTRY  win_1t, BS_WIND1
-        WINTRY  win_2t, BS_WIND2
         WINSET  win_1a, BS_WIND1, win_35
         WINSET  win_1b, BS_WIND1, win_30
-        WINSET  win_2a, BS_WIND2, win_35
-        WINSET  win_2b, BS_WIND2, win_30
 
 ; The replay's shots aim in more ways than one, but all end in a pitch,
 ; a yaw and the eye, applied as rotate x by pitch, rotate y by -yaw,
@@ -4210,8 +4230,7 @@ WIN_TRIES   equ 0x10000 / 0x80
         jmp     %2
 %endmacro
 
-        REPLAY  rep_1, BS_VIEWB, BS_SINB, BS_COSB, BS_RPITCH1, BS_RYAW1, BS_IDB
-        REPLAY  rep_2, BS_VIEWA, BS_SINA, BS_COSA, BS_RPITCH2, BS_RYAW2, BS_IDA
+        REPLAY  rep_1, BS_VIEWA, BS_SINA, BS_COSA, BS_RPITCH1, BS_RYAW1, BS_IDA
 
 ; --- state -----------------------------------------------------------------
 
@@ -4234,8 +4253,8 @@ unl_got: dd     0                   ; the names' tiles taken
 unl_placed: dd  0                   ; and placed: their first tile, and
 unl_first: dd   0                   ; the art's count before
 unl_count: dd   0
-unl_tune: dd    0x4b4c4e55          ; 'UNLK': the unlock's layout -
-unl_x1: dd      0x29                ; YOU UNLOCKED, column and row,
+unl_x1: dd      0x29                ; the unlock's layout: YOU UNLOCKED,
+                                    ; column and row,
 unl_y1: dd      0x13
 unl_x2: dd      0x24, 0x28          ; the name, Jaguarandi's and Z-Gradt's
 unl_y2: dd      0x16                ; columns, and its row,
@@ -4243,7 +4262,7 @@ urm_jag: dd     0.85, 10.0, 7.0     ; and the model, as rm_jag
 urm_z:  dd      0.35, 36.0, 7.0
 unl_px: dd      9                   ; the prompt, column and row
 unl_py: dd      0x2e
-stood_cb: dd    0                   ; the CPU's boss, standing
+stood_ca: dd    0                   ; the CPU's boss, standing
 
         align   4
 pull:   dd      320.0               ; how far back the eye goes
@@ -4275,9 +4294,7 @@ zspd_at: dd     0
 zspd_k: dd      3.0
 zslow:  dd      0
 end_g1p: dd     0                   ; the boss's machine, lent out
-zfake:  times 0x20 db 0
-zstage: dd      0                   ; and which part of it
-zpose:  times ZPOSE_N + 4 db 0     ; and its joint frames meanwhile
+zstage: dd      0                   ; which part of it (zfake)
 eside:  dd      0.0046875           ; how far off to the side, of the way
 eside_n: dd     0                   ; to the target, over ESTEP_FADE: 0.3
 rm_jag: dd      0.6, 4.0, 0.0       ; the report's model: scale, the
@@ -4286,6 +4303,14 @@ rm_z:   dd      0.45, 10.0, -5.0    ; height its origin sits at, and how
 rrm_jag: dd     0.85, 7.0, 4.0      ; the player's Jaguarandi, as the
                                     ; unlock poses it
 win_tries: dd   0
+zr_wait: dd     0                   ; frames GET READY has been held
+zl_prev: dd     0                   ; the player's levers last frame
+zl_on:  dd      0                   ; turning to face the CPU
+zl_ang: dd      0                   ; the way to it
+zf_start: dd    0, 199, 0, 60, 100, 199, 0, 100, 0, 199 ; the player's
+                                    ; Z-Gradt's fly-in, by arena: Air,
+                                    ; Fact, Water, Fore, Inka, Dock, Moon,
+                                    ; Tro, Fld, Core (0 the whole of it)
 win_z:  dd      4.0                 ; win and lose: the subject's distance
 win_jag: dd     2.0                 ; times this
 win_35: dd      35.0                ; the two a shot sets as constants
@@ -4295,7 +4320,7 @@ rep_jag: dd     80.0
 pullk:  dd      0
 pullh:  dd      0
 was:    dd      0                   ; on the select last frame
-boss:   dd      0                   ; the boss confirmed, 0 none
+boss:   dd      0                   ; the player's boss in one player, or 0
 bsrc:   dd      0                   ; the machine whose colours it wears
 bcolor: dd      0                   ; that machine's colour, 0 its own
 bside:  dd      0                   ; and the array it came from
@@ -4393,17 +4418,12 @@ selzmots:                           ; in the file, how much, where to,
         dd      0x104918, ZMOTSZ(SEL_ZJUMPF), selzdipf, selzdip, SEL_ZJUMPF
         dd      0x10fff8, ZMOTSZ(SEL_ZJUMPF), selzrecf, selzrec, SEL_ZJUMPF
         dd      0                   ; the motion and its frames
-selzmotion: times ZMOTSZ(SEL_ZFRAMES) db 0 ; its stance's frames, its dip's,
-selzdipf: times ZMOTSZ(SEL_ZJUMPF) db 0 ; its spring's
-selzrecf: times ZMOTSZ(SEL_ZJUMPF) db 0
 selzmot: dd     selzpose            ; its motions: one frame till they are
         dw      1, SEL_ZBONES       ; read
 selzdip: dd     selzpose
         dw      1, SEL_ZBONES
 selzrec: dd     selzpose
         dw      1, SEL_ZBONES
-selzvar: times SEL_ZBONES dw 0      ; every part as undamaged
-selzout: times 0x400 db 0           ; the pose's draw's output
 ; Z-Gradt's idle motion's first frame, as MT_zig.bin has it at 0xedb70:
 ; a bone's turn about x, y and z, and its place.
 selzpose:
@@ -4463,7 +4483,6 @@ seljagdraw: dd  0                   ; Jaguarandi being drawn
 sel_jagcam: dd  0.3, 0.03           ; Jaguarandi's, out further than any
         dw      -64, 0
 sel_neck: dd    0.0, 2.12, -0.02    ; its head from its chest, in its frame
-sel_half: dd    0.5
 selbuilt: dd    0                   ; the lineup's script, made once
 selt0:  dd      0, 0x42040000       ; machine of an object, of a cursor at
         dd      0, 4, 5, 2, 1, 7, 6, 3, JAG, ZGRADT ; +8
@@ -4487,49 +4506,16 @@ seltxt: SELTXT  'AUTOBAZOOKA', 'SPLITTER LASER', 'VIRAL MISSILE', '', \
                 'VUV-98-V', BS_LOGOJ, 0x22, 2
         SELTXT  'DOUBLE RING BEAM', 'MINEFIELD', 'ENERGY BARRAGE', \
                 'Z-TURBOLASER', 'ZUV-99-Z', BS_LOGOZ, 0x1a, 3
-selrow: times SEL_ROWW * 8 dw 0
-selrows: times 10 * SEL_ROWS db 0
-seld68: times 10 dd 0
-sellcam: times 10 * SEL_LCAM db 0
-selda8: times 10 dd 0
-selpath: times 0x104 db 0
-sel_frx: dq     -87.0, -137.0       ; the frame's x as the game has it,
-sel_frxw: dq    -87.0, -137.0       ; and as it is drawn
-sel_rbbuf: times 12 dd 0            ; the bosses' files read, per slot
-sel_rbin: db    0, 0                ; and their slots pointed there
-sel_rbtry: times 12 db 0            ; and read, or tried
+sel_frx: dq     -87.0, -137.0       ; the frame's x as the game has it
+sel_rbin: db    0, 0                ; the slots pointed at sel_rbbuf
 selblank: times 16 db ' '
         times 4 db 0
-selscript: times (SEL_EIGHT + 2 + SEL_REST) * SEL_REC db 0
 zmine:  dd      0                   ; the player posted Z-Gradt's event
 copied_a: dd    0
-copied_b: dd    0
 banked_a: dd    0
-banked_b: dd    0
-copy_a: times MODEL_COPY db 0
-copy_b: times MODEL_COPY db 0
-bank_a: times AI_STATE db 0
-scratch_a: times AI_STATE db 0
-bank_b: times AI_STATE db 0
-scratch_b: times AI_STATE db 0
-objsave: times OBJECT db 0
-stand_a: times OBJECT db 0
-stand_b: times OBJECT db 0
-standai_a: times AI_STATE db 0
-standai_b: times AI_STATE db 0
-rmbase: times 0x30 db 0
 rmbase_on: dd   0
 stood_a: dd     0
-stood_b: dd     0
-aisave_a: times AI_STATE db 0
-aisave_b: times AI_STATE db 0
-stand_cb: times OBJECT db 0
-standai_cb: times AI_STATE db 0
-unl_tiles: times (UNL_NJ + UNL_NZ) * UNL_TILE db 0
-unl_area: times (UNL_NJ + UNL_NZ + 1) * UNL_TILE db 0
-sel_rowskept: times 4 * 3 * SEL_PALRAM db 0 ; the bosses' rows' own
-unl_pals: times UNL_PALS db 0       ; the palettes the unlock had in
-unl_palin: dd   0                   ; and kept
+unl_palin: dd   0                   ; the unlock's palettes kept (unl_pals)
 unl_scn: dd     0                   ; the scene before Z-Gradt's unlock,
 unl_scnmem: dd  0                   ; kept here,
 unl_scnin: dd   0
@@ -4537,6 +4523,76 @@ unl_glow: dd    0, 0, 0
 unl_sega: dd    0
 unl_texb: dd    UNL_TEXB            ; and the texture bank,
 unl_texnow: dd  UNL_TEXB            ; the one in half 1 now
+
+; The zeroed buffers, last. The patcher writes the blob only as far as its
+; last byte that is not zero, and the section the blob ends gives them
+; its virtual size, which the loader zeroes (BSS_BLOBS) - so they cost the
+; file nothing.
+        align   16, db 0
+bss:
+        align   4, db 0
+zfake:  times 0x20 db 0
+        align   4, db 0
+zpose:  times ZPOSE_N + 4 db 0     ; and its joint frames meanwhile
+        align   4, db 0
+selzmotion: times ZMOTSZ(SEL_ZFRAMES) db 0 ; its stance's frames, its dip's,
+        align   4, db 0
+selzdipf: times ZMOTSZ(SEL_ZJUMPF) db 0 ; its spring's
+        align   4, db 0
+selzrecf: times ZMOTSZ(SEL_ZJUMPF) db 0
+        align   4, db 0
+selzvar: times SEL_ZBONES dw 0      ; every part as undamaged
+        align   4, db 0
+selzout: times 0x400 db 0           ; the pose's draw's output
+        align   4, db 0
+selrow: times SEL_ROWW * 8 dw 0
+        align   4, db 0
+selrows: times 10 * SEL_ROWS db 0
+        align   4, db 0
+seld68: times 10 dd 0
+        align   4, db 0
+sellcam: times 10 * SEL_LCAM db 0
+        align   4, db 0
+selda8: times 10 dd 0
+        align   4, db 0
+selpath: times 0x104 db 0
+        align   4, db 0
+sel_rbbuf: times 12 dd 0            ; the bosses' files read, per slot,
+        align   4, db 0
+sel_rbtry: times 12 db 0            ; and read, or tried
+        align   4, db 0
+selscript: times (SEL_EIGHT + 2 + SEL_REST) * SEL_REC db 0
+        align   4, db 0
+copy_a: times MODEL_COPY db 0
+        align   4, db 0
+bank_a: times AI_STATE db 0
+        align   4, db 0
+scratch_a: times AI_STATE db 0
+        align   4, db 0
+objsave: times OBJECT db 0
+        align   4, db 0
+stand_a: times OBJECT db 0
+        align   4, db 0
+standai_a: times AI_STATE db 0
+        align   4, db 0
+rmbase: times 0x30 db 0
+        align   4, db 0
+aisave_a: times AI_STATE db 0
+        align   4, db 0
+stand_ca: times OBJECT db 0
+        align   4, db 0
+standai_ca: times AI_STATE db 0
+        align   4, db 0
+unl_tiles: times (UNL_NJ + UNL_NZ) * UNL_TILE db 0
+        align   4, db 0
+unl_area: times (UNL_NJ + UNL_NZ + 1) * UNL_TILE db 0
+        align   4, db 0
+sel_rowskept: times 4 * 3 * SEL_PALRAM db 0 ; the bosses' rows' own
+        align   4, db 0
+unl_pals: times UNL_PALS db 0       ; the palettes the unlock had in
+        align   4, db 0
 unl_map: times UNL_NZ dw 0
+        align   4, db 0
 fxsave: times FX db 0
+        align   4, db 0
 fx2save: times FX2 db 0
