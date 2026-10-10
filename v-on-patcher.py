@@ -3046,8 +3046,8 @@ RETAIL = Build('English retail', 'retail', ORIGINAL_MD5, EXE_SIZE,
     'GETCLIENT': 0x0365d5d4,       # GetClientRect, the hooked one
     'MOVEWINDOW': 0x0365d5e0,      # MoveWindow
     'MCISEND': 0x0365d648,         # mciSendCommandA
-    # Playable bosses (asm/bosses.asm). A is the machine at 0x1ef8xxxx,
-    # player 2's side; B the one at 0x1ae0xxxx, player 1's.
+    # Playable bosses (asm/bosses.asm). A is player 1's copy of the fight
+    # machine, at 0x1ae0xxxx, the one a one-player game runs on.
     'BS_IDLE': 0x005c6531,         # the loop's idle call
     'BS_SFX': 0x00597311,          # sound effect, cdecl (id)
     'BS_SCENEB': 0x01efa9a4,       # scene words

@@ -11,9 +11,8 @@ bits 32
 ; On the 1P select an unlocked boss stands in the row after Raiden, cursor
 ; 8 and 9: two more scene objects, the row and its marks moved left to
 ; make room, the countdown 20 seconds longer, and the boss drawn in
-; palette rows of its own - so far on player 1's side (A) only, so a game
-; started from player 2's side has the eight alone. Confirming on a boss
-; stores its id in the player's machine global, and the game spawns that.
+; palette rows of its own. Confirming on a boss stores its id in the
+; player's machine global, and the game spawns that.
 ; The initials demo already fights 8 against 9, so the objects themselves
 ; work as a player's; what does not is everything the game only ever did
 ; with the eight, which is the rest of this file.
@@ -4530,8 +4529,8 @@ unl_texb: dd    UNL_TEXB            ; and the texture bank,
 unl_texnow: dd  UNL_TEXB            ; the one in half 1 now
 
 ; The zeroed buffers, last. The patcher writes the blob only as far as its
-; last byte that is not zero, and the section the blob ends gives them
-; its virtual size, which the loader zeroes (BSS_BLOBS) - so they cost the
+; last byte that is not zero, and its section, .vobs, carries them as
+; virtual size, which the loader zeroes (OWN_SECTIONS) - so they cost the
 ; file nothing.
         align   16, db 0
 bss:
