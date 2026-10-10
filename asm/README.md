@@ -207,9 +207,13 @@ reference the file shows, and both have crashed the game before. Two
 runs, at `0x5f80e0` and `0x623d98`, are `qword` constants that scan as
 zeros; `0x5fb140` is a scoreboard template the attract loop copies.
 
-Three patches append a section of their own rather than use the annex,
+Four patches append a section of their own rather than use the annex,
 because what they carry is too big for it and only exists once the patch
-is applied. The third, `.vohr`, is **Native widescreen**'s: its code is
+is applied. `.vobs` is **Playable bosses**' (`bosses.asm`, below): built
+and linked like the annex's blobs, since its place follows from the
+annex's, but written only when ticked and only as far as its last byte
+that is not zero - the buffers at its end are the section's virtual size.
+The third, `.vohr`, is **Native widescreen**'s: its code is
 `ui.asm` here, the same nasm as everything else, but built by
 `tools/uibuild.py` rather than `build.py` - it is position independent
 (no `org`) and carries its own address list, so the blob and its offset
@@ -781,6 +785,33 @@ sites each call `clipproj_a`/`b`, which divides by the aspect slot while
 the flag is up and the 3D slot otherwise. Two renderers, two flags, two
 pairs of projection slots. How it was found is in
 [HIRES.md](../docs/HIRES.md), *The lock-on line*.
+
+## bosses.asm
+
+Jaguarandi and Z-Gradt as the player's machine in a one-player game, once
+unlocked: two more places in the select's row, and a hook at each place
+the game only handled the eight. Player's guide and design in
+[BOSSES.md](../docs/BOSSES.md).
+
+The file is in sections, each a hook or a few: the per-frame tick from
+the loop's idle call, which follows the select and keeps the flag `boss`;
+confirm; the select's row, its tables made ten long and the bosses' own
+select models, posed from their fight models; the select's palettes,
+where a boss borrows two rows the select leaves alone; the portraits,
+marks and frame shifted left; the palette loaders; PLAYER DATA's
+turntable; the unlocks, their screen and `bosses.bin`; the round's
+animation loads; the ending; Z-Gradt's chase camera; Z-Gradt against
+Z-Gradt, where the player's gets its own model header and AI state; the
+win and replay cameras. The data is at the end, the zeroed buffers last so
+the file carries none of them.
+
+Every hook is player 1's copy of the fight machine's (`A` in the names,
+as [HIRES.md](../docs/HIRES.md) letters the renderers): the other copy's
+tick is only called in the loop's two-player branch, and the bosses are
+one player only. Hooks that replace more than one instruction replay what
+they displaced, and the ones in code every machine runs - the polygon
+queue, load identity, the shadow draws - test `boss` first and fall
+through to the original otherwise.
 
 ## titlever.asm
 

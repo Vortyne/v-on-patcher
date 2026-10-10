@@ -123,6 +123,7 @@ wrong on the build it is for; before tagging, give all four.
 | `tree` | nothing regenerated was left uncommitted. Skipped outside CI, where it would fail on every edit in progress |
 | `offsets` | `selftest.py`: every `original` column against a real file, hundreds of patch combinations applied, and the fully patched MD5, on whichever build the file is |
 | `banner` | `bannertest.py`: the title prompt decodes back to the bitmap it was written from, and both files restore byte for byte, on whichever build the folder holds |
+| `portrait` | `portraittest.py`: the bosses' select portraits read back out of `escrgame.bin` from the slots the blob's row builder names, both files restore byte for byte, and the patch unticked appends no section, on the retail and OEM folders |
 | `credit` | `credittest.py`: the credit line recomposes out of the patched roll files, and both restore byte for byte. The line is spread over three files that have to agree - the block list in the executable, the cells in `scrstfmp.bin`, the tiles in `scrstfcg.bin` - so it patches a copy, walks the block list the way `0x448d39` does, expands the cells back through the tile sheet and compares the pixels against the bitmap the patcher started from |
 | `uiemu` | `uiemu.py`: the resolution blob run under Unicorn on the retail exe, patched in memory at 1080p. Checks the plane B walker with a photo block in the ring, the HUD spread's 2D and polygon positions, the pre-fill, and the layouts' insets and scales. Needs nasm and python3-unicorn, and says so when it has neither |
 
@@ -182,11 +183,14 @@ python3 tools/assets.py
 
 ## Where the blobs live
 
-Every blob but two is in the annex: a section, `.vojp`, appended before
+Every blob but three is in the annex: a section, `.vojp`, appended before
 any patch is written, executable, and filled through the site table like
 any other site. Where it lands is fixed by the file's own headers, so its
 addresses are known at import and nothing is relinked at apply time. The
-two exceptions are places the game itself reaches - the F7 device list's
+bosses blob is too big for it and gets a section of its own, `.vobs`,
+appended after the annex only when its box is ticked (`OWN_SECTIONS`);
+its place follows from the annex's, so it links at import as well. The
+other two exceptions are places the game itself reaches - the F7 device list's
 own run in `.data`, and the levers routine written straight after the
 XInput routine - and those are the `caves` table of each `Build`.
 

@@ -109,11 +109,13 @@ two-player branch, so a one-player game never runs it and every hook is
 A's. Whether the player is a boss is one flag, `boss`, which confirm sets
 in one player only. The sections below follow the file.
 
-The blob's buffers - the bosses' motions, the model and AI copies, the
-saved palettes and the rest, about 230 KB - are gathered at its end. The
-patcher writes it only as far as its last byte that is not zero; the annex
-section it ends claims the rest as virtual size, which Windows zeroes at
-load (`BSS_BLOBS`), so the file carries about 19 KB of it.
+The blob has a section of its own, `.vobs`, that the patcher appends only
+when the box is ticked, so unticked it leaves the executable as the other
+patches alone would. Its buffers - the bosses' motions, the model and AI
+copies, the saved palettes and the rest, about 230 KB - are gathered at
+its end, and the file carries the blob only as far as its last byte that
+is not zero, 15 KB; the rest is the section's virtual size, which Windows
+zeroes at load (`OWN_SECTIONS`).
 
 ### The select's row
 

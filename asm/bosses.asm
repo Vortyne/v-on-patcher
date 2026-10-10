@@ -353,8 +353,8 @@ tick:
         mov     dword [sel_zhead], 0
         mov     dword [sel_zspin], 0
         mov     dword [end_g1p], 0
-        mov     dword [banked_a], 0 ; a new fight's Z-Gradt starts from the
-                                    ; CPU's state just initialised again
+        mov     dword [banked_a], 0 ; a fight's Z-Gradt starts from the
+                                    ; CPU's state just initialised (ZINIT)
         mov     byte [zfly_on], 0   ; and a player's Z-Gradt on the ground
         call    zbeam_off
         cmp     dword [BS_G1PA], 7
@@ -3862,9 +3862,14 @@ ZTAB_4      equ 0x260
 ; over; a player's Z-Gradt, ticked by its stick, opened every fight with
 ; them. After Z-Gradt's own setup, a player's is put at no attack.
 ;
+; Each round sets both objects up again, so the player's bank of the AI
+; state (AI, banked_a) is dropped here and taken afresh from the CPU's,
+; just initialised, on its first tick of the round.
+;
 ; In place of the call to Z-Gradt's setup, both sites per copy.
 %macro ZINIT 2                      ; label, the setup
 %1:
+        mov     dword [banked_a], 0
         push    dword [esp + 4]
         call    %2
         add     esp, 4

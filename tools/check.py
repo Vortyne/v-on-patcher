@@ -87,7 +87,8 @@ CHECKS = [
       'tools/vomap.py', 'tools/votrans.py', 'tools/whereis.py',
       'tools/uibuild.py', 'tools/hiresport.py', 'tools/vonpatcher_hires.py',
       'tools/rvload.py', 'tools/uiemu.py', 'tools/portaudit.py',
-      'tools/assets.py', 'tools/map.py', 'net/rendezvous.py'], False,
+      'tools/assets.py', 'tools/map.py', 'tools/portraits.py',
+      'tools/portraittest.py', 'net/rendezvous.py'], False,
      False),
     ('map', 'docs/MAP.md region table matches the script',
      [PY, 'tools/map.py', '--check'], False, False),
@@ -99,6 +100,8 @@ CHECKS = [
      [PY, 'tools/bannertest.py', '{game}'], True, False),
     ('credit', 'the credit line reads back out of the roll',
      [PY, 'tools/credittest.py', '{game}'], True, False),
+    ('portrait', 'the boss portraits read back as written',
+     [PY, 'tools/portraittest.py', '{game}'], True, False, ('retail', 'oem')),
     ('uiemu', 'the resolution blob run under Unicorn',
      [PY, 'tools/uiemu.py', '{exe}'], True, False, ('retail',)),
 ]
