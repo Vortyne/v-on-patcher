@@ -221,9 +221,7 @@ extern BS_ENDWA
 extern BS_VIEWA                 ; view translate, and its sin and cos
 extern BS_SINA
 extern BS_COSA
-extern BS_YAW4                  ; the yaw each call placed its eye by
-extern BS_YAW5
-extern BS_LIVEA                 ; resume past the live camera's load
+extern BS_YAW4                  ; the yaw the opening shots place the eye by
 
 ; Z-Gradt against Z-Gradt
 extern BS_READYA                ; frames since GET READY
@@ -973,13 +971,18 @@ sel_loadzmot:
 .out:   ret
 
 ; The hangar draws a machine only within 28.43 ahead of the camera along
-; the row; Z-Gradt, far past Jaguarandi and so large, is in sight from
-; Jaguarandi's place too (drawn black: its palettes are not in). In place
-; of `fadd qword [28.43]`, a nop after; [ebp+0xc] the scene object.
-SEL_ZOBJ    equ SEL_EIGHT + 1       ; Z-Gradt's scene object
+; the row: Jaguarandi, 30 past Raiden, is given a little more so it does
+; not appear a frame into the move from Raiden's place, and Z-Gradt, far
+; past it and so large, is in sight from Jaguarandi's. In place of `fadd
+; qword [28.43]`, a nop after; [ebp+0xc] the scene object.
+SEL_JOBJ    equ SEL_EIGHT           ; Jaguarandi's scene object
+SEL_ZOBJ    equ SEL_EIGHT + 1       ; Z-Gradt's
 selcull_a:
         fadd    qword [BS_SELAHEAD]
-        cmp     dword [ebp + 0xc], SEL_ZOBJ
+        cmp     dword [ebp + 0xc], SEL_JOBJ
+        jne     .z
+        fadd    dword [sel_jsight]
+.z:     cmp     dword [ebp + 0xc], SEL_ZOBJ
         jne     .out
         fadd    dword [sel_zsight]
 .out:   ret
@@ -1765,26 +1768,21 @@ selcur:
 ; A boss's fight model, for drawing it outside a fight. Its meshes are
 ; found through the file slot its name has (SEL_JAGFILE, SEL_ZFILE), the
 ; game's loader putting files one after another in an 8 MB pool; the
-; game's own copy is used when it has one. Otherwise the file is read once
-; into a block of its own (sel_loadrb), and the slot points there only
-; while a boss is drawn (sel_slotsin, sel_slotsout): appended to the pool,
-; it could run past its end into what follows - the C library's heap
-; list, at the select after a game's end.
+; file is read once into a block of its own (sel_loadrb), and the slot
+; points there only while a boss is drawn (sel_slotsin, sel_slotsout).
+; Always the patch's own block, never a copy the game has in the pool
+; from a fight: selcol turns the colour words of the meshes it draws from
+; for good, and a fight that reused the pool's would draw through the
+; select's rows. Appended to the pool, the file could run past its end
+; into what follows - the C library's heap list, at the select after a
+; game's end.
 ; eax the file slot, which is also its name's place.
 sel_loadrb:
         pushad
         mov     ebp, eax
-        cmp     dword [BS_SLOTS + ebp * 4], 0
-        jne     .out                ; the game's copy
         cmp     byte [sel_rbtry + ebp], 0
-        jne     .out                ; or ours, read already (or tried)
+        jne     .out                ; read already, or tried
         mov     byte [sel_rbtry + ebp], 1
-        push    dword [BS_RBNAMES + ebp * 8 + 4]
-        call    BS_MALLOC
-        add     esp, 4
-        test    eax, eax
-        jz      .out
-        mov     esi, eax
         push    dword [BS_RBNAMES + ebp * 8]
         push    BS_RBDIR
         push    BS_PATHFMT
@@ -1798,20 +1796,28 @@ sel_loadrb:
         test    eax, eax
         jz      .out
         mov     ebx, eax
+        push    dword [BS_RBNAMES + ebp * 8 + 4]
+        call    BS_MALLOC
+        add     esp, 4
+        test    eax, eax
+        jz      .close
+        mov     esi, eax
         push    ebx
         push    1
         push    dword [BS_RBNAMES + ebp * 8 + 4]
         push    esi
         call    BS_FREAD
         add     esp, 16
-        push    ebx
+        cmp     eax, [BS_RBNAMES + ebp * 8 + 4]
+        jne     .close              ; short: not a model to draw
+        mov     [sel_rbbuf + ebp * 4], esi
+.close: push    ebx
         call    BS_FCLOSE
         add     esp, 4
-        mov     [sel_rbbuf + ebp * 4], esi
 .out:   popad
         ret
 
-; Both bosses' slots to their blocks where the game has no copy, and back.
+; Both bosses' slots to their blocks, the game's own kept, and back.
 sel_slotsin:
         pushad
 %assign k 0
@@ -1821,12 +1827,11 @@ sel_slotsin:
   %else
     %define SLOT SEL_JAGFILE
   %endif
-        cmp     dword [BS_SLOTS + SLOT * 4], 0
-        jne     .k%[k]
         mov     eax, [sel_rbbuf + SLOT * 4]
         test    eax, eax
         jz      .k%[k]
-        mov     [BS_SLOTS + SLOT * 4], eax
+        xchg    eax, [BS_SLOTS + SLOT * 4]
+        mov     [sel_rbold + k * 4], eax
         mov     byte [sel_rbin + k], 1
 .k%[k]:
   %undef SLOT
@@ -1836,15 +1841,19 @@ sel_slotsin:
         ret
 
 sel_slotsout:
+        push    eax
         cmp     byte [sel_rbin], 0
         je      .z
         mov     byte [sel_rbin], 0
-        mov     dword [BS_SLOTS + SEL_JAGFILE * 4], 0
+        mov     eax, [sel_rbold]
+        mov     [BS_SLOTS + SEL_JAGFILE * 4], eax
 .z:     cmp     byte [sel_rbin + 1], 0
         je      .out
         mov     byte [sel_rbin + 1], 0
-        mov     dword [BS_SLOTS + SEL_ZFILE * 4], 0
-.out:   ret
+        mov     eax, [sel_rbold + 4]
+        mov     [BS_SLOTS + SEL_ZFILE * 4], eax
+.out:   pop     eax
+        ret
 
 ; In place of the calls to the select's text for the cursor (cdecl, the
 ; cursor): for a boss, its weapons, its name and its model, as the game
@@ -3490,53 +3499,69 @@ is_zgradt:
         cmp     dword [boss], ZGRADT
         ret
 
-; In place of a call to the view translate: [esp+4..0xc] are the eye's
-; negated X, Y and Z. Pull it back along the yaw it was placed by.
+; The round's opening shots (0x4db173) stand the eye a set distance from
+; their subject, the player's machine or the CPU's, along the yaw at
+; BS_YAW4: eye = subject + d (sin yaw, 0, -cos yaw), d 130 or 140. In
+; place of their call to the view translate, [esp+4..0xc] the eye's
+; negated X, Y and Z: for a shot of the player's Z-Gradt - the machine
+; the eye stands nearer - the eye goes `pull` further back the same way.
 %macro PULL 5                       ; label, view, sin, cos, yaw
 %1:
         call    is_zgradt
         jne     %2
+        fld     dword [esp + 4]     ; the player's machine nearer than the
+        fadd    dword [BS_OBJA + 8] ; CPU's: its shot
+        fmul    st0, st0
+        fld     dword [esp + 0xc]
+        fadd    dword [BS_OBJA + 0x10]
+        fmul    st0, st0
+        faddp   st1, st0
+        fld     dword [esp + 4]
+        fadd    dword [BS_CPUA + 8]
+        fmul    st0, st0
+        fld     dword [esp + 0xc]
+        fadd    dword [BS_CPUA + 0x10]
+        fmul    st0, st0
+        faddp   st1, st0
+        fcompp
+        fnstsw  ax
+        test    ah, 1               ; C0: the CPU's is the nearer
+        jnz     %2
         movsx   ecx, word [%5]
         push    ecx
         call    %3
         add     esp, 4
         fmul    dword [pull]
-        fadd    dword [esp + 4]
+        fsubr   dword [esp + 4]     ; -x - pull sin
         fstp    dword [esp + 4]
         movsx   ecx, word [%5]
         push    ecx
         call    %4
         add     esp, 4
         fmul    dword [pull]
-        fsubr   dword [esp + 0xc]
+        fadd    dword [esp + 0xc]   ; -z + pull cos
         fstp    dword [esp + 0xc]
         jmp     %2
 %endmacro
 
-; One stub per yaw: the first two sites share one, as do the last two.
-; The replay's call is not one of them: REPLAY below aims it properly.
         PULL    cam_4, BS_VIEWA, BS_SINA, BS_COSA, BS_YAW4
-        PULL    cam_5, BS_VIEWA, BS_SINA, BS_COSA, BS_YAW5
 
-; The live camera, once its distance at 0x40 is final: four times it for
-; Z-Gradt. In place of `mov eax, [ebp+CAM_PTR]; movsx eax, word [eax+0x1e]`.
-%macro LIVE 2                       ; label, resume
-%1:
+; The chase camera (0x512e5a, its block at BS_ECBLKA) keeps a distance
+; its mode sets at +0x3c - 56 in the command poses, 78 turning on the
+; spot, 30 or 75 with the CPU close - and eases the live one at +0x40
+; towards it a unit or less a frame; the eye is placed that far from the
+; look-at along the yaw and pitch. Z-Gradt's is `scale` times as far,
+; taken where the eye is placed, so the distances the mode logic and the
+; over-the-shoulder offset read stay the game's and the glide is kept. In
+; place of `mov eax, [ebp+CAM_PTR]; fmul dword [eax+0x40]`, a nop after,
+; at the radius and at the height.
+zeye_a:
+        mov     eax, [ebp + CAM_PTR]
+        fmul    dword [eax + 0x40]
         call    is_zgradt
-        jne     %%stock
-        mov     eax, [ebp + CAM_PTR]
-        fld     dword [eax + 0x3c]
+        jne     .out
         fmul    dword [scale]
-        fstp    dword [eax + 0x3c]
-        fld     dword [eax + 0x3c]
-        fstp    dword [eax + 0x40]
-%%stock:
-        mov     eax, [ebp + CAM_PTR]
-        movsx   eax, word [eax + 0x1e]
-        jmp     %2
-%endmacro
-
-        LIVE    live_a, BS_LIVEA
+.out:   ret
 
 ; --- Z-Gradt against Z-Gradt -----------------------------------------------
 
@@ -4269,8 +4294,8 @@ unl_py: dd      0x2e
 stood_ca: dd    0                   ; the CPU's boss, standing
 
         align   4
-pull:   dd      320.0               ; how far back the eye goes
-scale:  dd      4.0                 ; and the live camera's distance
+pull:   dd      140.0               ; the opening shots' eye, further back
+scale:  dd      2.0                 ; the chase camera's distance, times
 ecam_jag: dd    2.5                 ; the ending's camera, how far out
 ecam_z: dd      4.0
 ecam_zfly: dd   8.0
@@ -4383,6 +4408,7 @@ sel_zbob: dd    0.03                ; its head's bounce up and down
 sel_zturn: dd   9.5873799e-5        ; an angle unit, in radians (pi / 0x8000)
 sel_zprevz: dd  0.0                 ; where it was last frame
 sel_zsight: dd  80.0                ; Z-Gradt drawn further ahead
+sel_jsight: dd  10.0                ; and Jaguarandi a little
 sel_zflamey: dd  -15.0              ; its thruster's flame, from its root,
 sel_zflamerx: dd -10560             ; turned out of its underside (the
                                     ; jets lie 32 degrees below the mesh's z),
@@ -4488,7 +4514,7 @@ sel_jagcam: dd  0.3, 0.03           ; Jaguarandi's, out further than any
         dw      -64, 0
 sel_neck: dd    0.0, 2.12, -0.02    ; its head from its chest, in its frame
 selbuilt: dd    0                   ; the lineup's script, made once
-selt0:  dd      0, 0x42040000       ; machine of an object, of a cursor at
+selt0:  dd      0, 0                ; machine of an object, of a cursor at
         dd      0, 4, 5, 2, 1, 7, 6, 3, JAG, ZGRADT ; +8
 %macro SELTXT 8                     ; four weapons, model, name, w, h
 %rep 4                              ; the weapons as long as the longest
@@ -4512,6 +4538,7 @@ seltxt: SELTXT  'AUTOBAZOOKA', 'SPLITTER LASER', 'VIRAL MISSILE', '', \
                 'Z-TURBOLASER', 'ZUV-99-Z', BS_LOGOZ, 0x1a, 3
 sel_frx: dq     -87.0, -137.0       ; the frame's x as the game has it
 sel_rbin: db    0, 0                ; the slots pointed at sel_rbbuf
+sel_rbold: dd   0, 0                ; and what they held
 selblank: times 16 db ' '
         times 4 db 0
 zmine:  dd      0                   ; the player posted Z-Gradt's event

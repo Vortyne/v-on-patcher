@@ -33,16 +33,16 @@ is stale, so the line numbers are current.
 | 39–2639 | widescreen: the layouts, `UI_CODE`, the port tables, the site builder | `# The resolution patch: the` |
 | 2640–2782 | widescreen apply: `hires_install`, section append, F4 table | `def hires_install(buf, width` |
 | 2783–2880 | disc images table, `Build` class, annex order | `DISC_IMAGES = {` |
-| 2881–3968 | the four builds: symbols, caves, site maps | `RETAIL = Build('English reta` |
-| 3969–4990 | generated site maps for the other three builds (`tools/buildsites.py`) | `# SITES JPRE BEGIN` |
-| 4991–15349 | the blobs, `BLOBS`, and `link()` | `BLOBS = {` |
-| 15350–16128 | banner and credit bitmaps, tile expansion | `LEVERS_CODE = link('LEVERS',` |
-| 16129–17113 | the patch table: `FEATURES`, `BY_KEY`, labels, tips, apply order | `FEATURES = [` |
-| 17114–17961 | ripping (`RAW = 2352`) and installing (`LOGICAL = 2048`) | `# --- ripping --------------` |
-| 17962–18814 | netplay setup, `SYNC_SITES`, cnc-ddraw, CD audio | `# --- netplay --------------` |
-| 18815–19336 | `Patcher`: reading a file, applying, restoring | `class Patcher:` |
-| 19337–19904 | the logo and icon (`tools/assets.py`), then the window strings | `# ASSETS BLOB BEGIN - tools/` |
-| 19905–21941 | the window (`run_tk`), the CLI, `main` | `def run_tk():` |
+| 2881–3964 | the four builds: symbols, caves, site maps | `RETAIL = Build('English reta` |
+| 3965–4985 | generated site maps for the other three builds (`tools/buildsites.py`) | `# SITES JPRE BEGIN` |
+| 4986–15342 | the blobs, `BLOBS`, and `link()` | `BLOBS = {` |
+| 15343–16121 | banner and credit bitmaps, tile expansion | `LEVERS_CODE = link('LEVERS',` |
+| 16122–17106 | the patch table: `FEATURES`, `BY_KEY`, labels, tips, apply order | `FEATURES = [` |
+| 17107–17954 | ripping (`RAW = 2352`) and installing (`LOGICAL = 2048`) | `# --- ripping --------------` |
+| 17955–18807 | netplay setup, `SYNC_SITES`, cnc-ddraw, CD audio | `# --- netplay --------------` |
+| 18808–19329 | `Patcher`: reading a file, applying, restoring | `class Patcher:` |
+| 19330–19897 | the logo and icon (`tools/assets.py`), then the window strings | `# ASSETS BLOB BEGIN - tools/` |
+| 19898–21934 | the window (`run_tk`), the CLI, `main` | `def run_tk():` |
 <!-- REGIONS END -->
 
 ## 3. `v_on.exe`
@@ -188,4 +188,4 @@ within 16 KB of each other.
 | sound | 5 | `0x458d89`, `0x5719c9`, `0x58a146–0x58a152`, `0x6bcc60` |
 | movie | 10 | the PE header, `0x4d6cc8`, `0x54e842`, `0x590825`, `0x5c64e7`, `0x6c8878`, the annex |
 | credits | 5 | `0x5c6500`, `.rdata 0x5fdac8`, `0x6bcd54`, the annex |
-| bosses | 146 | 19 runs from `0x404db7` to `0x5e0254`, `.rdata 0x5ff238` and `0x63c1d4–0x63e084` (the bosses' weapon names), plus its section |
+| bosses | 145 | 18 runs from `0x404db7` to `0x5e0254`, `.rdata 0x5ff238` and `0x63c1d4–0x63e084` (the bosses' weapon names), plus its section |

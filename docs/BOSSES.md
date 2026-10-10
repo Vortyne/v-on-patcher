@@ -63,8 +63,9 @@ unpatched game never reads it.
 - The KO replay and the win and lose shots pull back to frame a boss's
   size; on a small arena the win shots that need floor under the camera
   fall back to the usual distance rather than search for ever.
-- Z-Gradt's chase camera is pulled back out of its body, and turns with
-  it as it turns on the spot.
+- Z-Gradt's chase camera stands twice as far back as the eight's, and
+  glides between its distances as theirs does; it turns with Z-Gradt as it
+  turns on the spot. The round's opening shots of it stand as far again.
 - Z-Gradt's fly-in is shortened where the arena is in the way: indoors
   (Deathtrap, the Spaceport, the Secret Base) it only drops into place, and
   over the Flooded City, the Ruins and the Green Hills it starts part of the
@@ -96,9 +97,10 @@ unpatched game never reads it.
 - `bosses.bin` is written beside the game when a boss is unlocked. Where
   the folder cannot be written, the unlock screen still shows but the
   unlock is lost at exit.
-- Jaguarandi's model file, `RB_jag.bin`, is read when the select first
-  draws it. If the read fails it is drawn from whatever the model pool
-  holds there, until a fight loads it.
+- The bosses' model files, `RB_jag.bin` and `RB_zig.bin`, are read into
+  blocks of the patch's own when the select first draws each. If a read
+  fails, that boss is drawn from whatever the model pool holds in its
+  slot, until a fight loads it.
 
 ## How it works
 
@@ -220,9 +222,15 @@ with the texture bank the fights had loaded reloaded.
   the eight have rows in. A boss is drawn by its fight object, or its
   select pose for Jaguarandi, from a standing copy taken at the start of
   its last round, and everything the draw touches is put back.
-- **Round animations, the ending, Z-Gradt's camera, Z-Gradt against
-  Z-Gradt, Z-Gradt's gold, the replay and the win shots** - each rerouted
-  for ids 8 and 9, as its section in the source explains.
+- **Z-Gradt's camera** - the chase camera keeps a distance its mode sets
+  and eases the live one towards it; the patch doubles it where the eye
+  is placed (`zeye_a`), so the mode logic reads the game's own distances
+  and the glide is kept. The round's opening shots place the eye a set
+  distance from their subject: a shot of the player's Z-Gradt gets 140
+  more (`cam_4`).
+- **Round animations, the ending, Z-Gradt against Z-Gradt, Z-Gradt's
+  gold, the replay and the win shots** - each rerouted for ids 8 and 9,
+  as its section in the source explains.
 - **The player's Z-Gradt** - its fly-in starts by the arena loaded
   (`zflyin_a`, `zf_start`), and GET READY's count is held at its end till
   it lands (`zready_a`). Its facing goes to the chase camera each frame,
