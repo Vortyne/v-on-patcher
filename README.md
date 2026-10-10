@@ -246,7 +246,8 @@ The offsets and internals of every patch are in [NOTES.md](docs/NOTES.md).
   and the countdown runs 20 seconds longer. With Machine Color Select on, a
   boss can wear any of the colours. The report after stage 5 turns the boss
   itself. One player only, on purpose - they are too strong for a fair
-  two-player fight. Unticked by default.
+  two-player fight. Unticked by default. The whole of it is in
+  [BOSSES.md](docs/BOSSES.md).
 - **Pre-unlock the bosses** - both bosses selectable from the start: writes
   `bosses.bin` with both unlocked. Needs Playable bosses, never lowers
   progress already made, and is left alone by **Restore original**.
@@ -686,8 +687,8 @@ Four builds of the game exist, and all four patch:
 | Japanese original | 6,644,224 | `9764d946ffc8cee94788707c91753478` | patches |
 
 The USA, USA Alt and European discs all carry the same English retail
-`v_on.exe`, so any of them will do. Every patch works on all four builds,
-and the window names the build it is looking at.
+`v_on.exe`, so any of them will do. Every patch but **Playable bosses**
+works on all four builds, and the window names the build it is looking at.
 
 **[The Japanese original](https://redump.info/disc/133978)** is the 1997
 1.04J pressing, also found in the Sega PC Greatest Hits Vol. 3 bundle. Its

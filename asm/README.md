@@ -213,7 +213,7 @@ is applied. `.vobs` is **Playable bosses**' (`bosses.asm`, below): built
 and linked like the annex's blobs, since its place follows from the
 annex's, but written only when ticked and only as far as its last byte
 that is not zero - the buffers at its end are the section's virtual size.
-The third, `.vohr`, is **Native widescreen**'s: its code is
+The fourth, `.vohr`, is **Native widescreen**'s: its code is
 `ui.asm` here, the same nasm as everything else, but built by
 `tools/uibuild.py` rather than `build.py` - it is position independent
 (no `org`) and carries its own address list, so the blob and its offset
@@ -801,8 +801,8 @@ where a boss borrows two rows the select leaves alone; the portraits,
 marks and frame shifted left; the palette loaders; PLAYER DATA's
 turntable; the unlocks, their screen and `bosses.bin`; the round's
 animation loads; the ending; Z-Gradt's chase camera; Z-Gradt against
-Z-Gradt, where the player's gets its own model header and AI state; the
-win and replay cameras. The data is at the end, the zeroed buffers last so
+Z-Gradt, where the player's gets its own model header and AI state;
+Z-Gradt's gold; the win and replay cameras. The data is at the end, the zeroed buffers last so
 the file carries none of them.
 
 Every hook is player 1's copy of the fight machine's (`A` in the names,

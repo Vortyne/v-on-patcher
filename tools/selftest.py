@@ -26,9 +26,9 @@ import sys
 # Everything ticked, per build: retail, the Japanese rerelease, the OEM,
 # the Japanese original.
 EXPECTED_ALL = {
-    'a464b0ff32d5bab499f265e45658504e': '261f99ad1bfa6484132eb71cd9215dd4',
+    'a464b0ff32d5bab499f265e45658504e': '9590140a8f203c28461f320977978cbd',
     'd19320bdc3381a48228990907910a391': '0180355d2a61697dc661f5cad735837e',
-    '4c70f780a7f0d98d74be62304fb99021': '65b72b9a32dfe49af94c69e6c681c577',
+    '4c70f780a7f0d98d74be62304fb99021': '60ba5c06510a92c001add20624368566',
     '9764d946ffc8cee94788707c91753478': '9d8f0a3cff422ec2ff296abcb6385fa2',
 }
 
@@ -89,7 +89,9 @@ def apply(vp, original, keys, build):
     buf, _applied, skipped = vp.apply_selected(bytearray(original),
                                                dict.fromkeys(keys, True),
                                                build)
-    # Skipped as it should be: a patch whose prerequisite is not ticked.
+    # Skipped as it should be: a patch whose prerequisite is not ticked
+    # (one not ported to the build never gets this far: main() keeps it
+    # out of `keys`).
     skipped = [(key, why) for key, why in skipped
                if key not in vp.NEEDS or vp.NEEDS[key] in keys]
     if skipped:

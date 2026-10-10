@@ -32,9 +32,9 @@ bits 32
 ; machine under the cursor through eight colours, 0 being its own. Each
 ; machine's eight are pairs of palettes from one shared pool - the other
 ; colours are mostly other machines' palettes - so a boss can wear any of
-; them, chosen on it in the row. The palette loaders (0x4c2026 B,
-; 0x4f358b A) give the boss that pair in place of its own when it is not
-; 0. A boss has no colours of its own: the loaders send ids above 7 to a
+; them, chosen on it in the row. The palette loader (0x4f358b) gives the
+; boss that pair in place of its own when it is not 0. A boss has no
+; colours of its own: the loader sends ids above 7 to a
 ; fixed table without reading one.
 ;
 ; Which side of the palette slots a player's machine uses depends on the
@@ -50,8 +50,8 @@ bits 32
 extern GAMEMODE                 ; 0 one player, 1 two, 2 network
 extern BS_IDLE                  ; the loop's idle call, both sites
 extern BS_SFX                   ; play a sound effect, cdecl (id)
-extern BS_SCENEB                ; scene words: [0x20, 0x30) is the
-extern BS_SCENEA                ; select and the encounter
+extern BS_SCENEA                ; the scene word: [0x20, 0x30) is the
+                                ; select and the encounter
 extern BS_G1PA                  ; the player's machine id
 extern BS_MODEA                 ; A's mode: 0 puts its player on slots 1/3
 extern BS_COL0                  ; colour per machine for slots 1/3
@@ -83,11 +83,11 @@ extern BS_IDENTA                ; load identity, past its prologue
 extern BS_LIGHTA                ; a machine's shadow: the light it reads,
 extern BS_SHADEA                ; where it carries on, and past it
 extern BS_NOSHADEA
-extern BS_ZSHTA                 ; Z-Gradt's shadow: the timer it tests,
-extern BS_ZSHADEA               ; where it carries on, and past it
+extern BS_ZSHADEA               ; Z-Gradt's shadow (its timer BS_ZTIMA):
+                                ; where it carries on, and past it
 extern BS_ZNOSHADEA
-extern BS_ETRA                  ; the ending's camera: the move it builds
-extern BS_ECBLKA                ; the view with, and its block
+extern BS_ECBLKA                ; the ending's camera's block (its move
+                                ; the view translate, BS_VIEWA)
 extern BS_ESTEPA                ; and the ending's step
 extern BS_WALLA                 ; the floor's height, from a beam segment
 extern BS_SPDA                  ; Z-Gradt's beam's speed
@@ -147,7 +147,6 @@ extern BS_SELOBJ                ; the scene's objects
 extern BS_HSITE                 ; the hangar's draw of a machine, and
 extern BS_HDOFF                 ; where the widescreen one is in its blob
 extern BS_MESHA                 ; a part's meshes (the three, 0)
-extern BS_TRANSA                ; translate the matrix (x, y, z)
 extern BS_ROTXA                 ; turn it about x (the angle)
 extern BS_POSEA                 ; a fight model posed by a motion
 extern BS_ROTYA                 ; turn the matrix about y (the angle)
@@ -182,7 +181,7 @@ extern BS_REPCNT
 extern BS_TCLRALL               ; text: clear the planes, reset the cursor,
 extern BS_TRESET                ; print in the large white font
 extern BS_PRINTBIG
-extern BS_PADEDGE               ; the buttons pressed this frame
+extern BS_PADEDGE               ; the buttons held this frame
 extern BS_FADE                  ; fade (level), and a scene's end
 extern BS_SCNEND
 extern BS_FWRITE                ; the C library's, and "wb"
@@ -212,17 +211,16 @@ extern BS_C2A                   ; mode 0xa: resume
 ; The ending
 extern BS_TIMEA                 ; the ending's frame counter
 extern BS_PHASEA                ; and its phase
-extern BS_ENDA                  ; resume, phase 1, epilogue, button wait
-extern BS_END1A
+extern BS_ENDA                  ; resume, phase 1, epilogue (the button
+extern BS_END1A                 ; wait)
 extern BS_ENDEA
-extern BS_ENDWA
 
 ; Z-Gradt's chase camera
-extern BS_VIEWA                 ; view translate, and its sin and cos
+extern BS_VIEWA                 ; translate the matrix (x, y, z): the view
+                                ; translate; and sin and cos
 extern BS_SINA
 extern BS_COSA
-extern BS_YAW4                  ; the yaw each call placed its eye by
-extern BS_YAW5
+extern BS_YAW4                  ; the yaw the opening shots place the eye by
 extern BS_LIVEA                 ; resume past the live camera's load
 
 ; Z-Gradt against Z-Gradt
@@ -248,7 +246,6 @@ extern BS_TICKA                 ; its tick, resume
 ; Z-Gradt's gold
 extern BS_EVA                   ; the palette event its handler takes, 0xff none
 extern BS_ZEVA                  ; the one Z-Gradt's AI state asks for
-extern BS_LOADA                 ; (slot, palette id): the loaders
 extern BS_ZRA5                  ; event 0x200, its own palettes back:
 extern BS_ZRA1                  ; slots 5/7, slots 1/3, and the end
 extern BS_ZRAX
@@ -276,7 +273,7 @@ READY_GO    equ 5                   ; frames after GET READY before the
 MODEL_COPY  equ 0x800
 OBJECT      equ 0x600               ; a fight object, 0x1ae0c40 to 0x1ae1240
 AI_STATE    equ 0x1e0
-FX          equ 24 * 0x24           ; the effects tables, BS_FX and BS_FX2
+FX          equ 24 * 0x24           ; the effects tables, BS_FXA and BS_FX2A
 FX2         equ 24 * 0x38
 
 %macro COPYN 3                      ; dst, src, bytes
@@ -325,12 +322,7 @@ tick:
         call    selpalguard
         mov     dword [win_tries], 0
         xor     edx, edx
-        movzx   eax, word [BS_SCENEB]
-        cmp     eax, SELECT_LO
-        jb      .b
-        cmp     eax, SELECT_HI
-        jb      .in
-.b:     movzx   eax, word [BS_SCENEA]
+        movzx   eax, word [BS_SCENEA]
         cmp     eax, SELECT_LO
         jb      .out
         cmp     eax, SELECT_HI
@@ -360,10 +352,6 @@ tick:
         jbe     .attract
         mov     dword [BS_G1PA], 0
 .attract:
-        movzx   eax, word [BS_SCENEB]
-        sub     eax, ATTRACT_LO
-        cmp     eax, ATTRACT_HI - ATTRACT_LO
-        jb      .forget
         movzx   eax, word [BS_SCENEA]
         sub     eax, ATTRACT_LO
         cmp     eax, ATTRACT_HI - ATTRACT_LO
@@ -419,7 +407,6 @@ confirm_a:
 ; place of the game's at every read. A machine's object is the cursor's
 ; plus two, so the two go in before the hangar's.
 ;
-; Only A's select so far.
 SEL_REC     equ 0x30                ; a script record
 SEL_EIGHT   equ 10                  ; the camera, its own, and the eight
 SEL_REST    equ 14                  ; the hangar's, to the end marker
@@ -635,7 +622,7 @@ selpart_a:
         push    dword [sel_neck + 8]
         push    dword [sel_neck + 4]
         push    dword [sel_neck]
-        call    BS_TRANSA
+        call    BS_VIEWA
         add     esp, 12
         push    SEL_NECKX
         call    BS_ROTXA
@@ -670,7 +657,7 @@ selzdraw:
         push    0
         push    dword [sel_zpivot]
         push    0
-        call    BS_TRANSA
+        call    BS_VIEWA
         add     esp, 12
         sub     esp, 4
         fld     dword [sel_ztilt]
@@ -682,7 +669,7 @@ selzdraw:
         push    0
         push    dword [sel_zpivotn]
         push    0
-        call    BS_TRANSA
+        call    BS_VIEWA
         add     esp, 12
 .pose:
 %rep 3
@@ -737,7 +724,7 @@ selzdraw:
         push    dword [edi + 0x10]
         push    dword [edi + 0xc]
         push    dword [edi + 8]
-        call    BS_TRANSA
+        call    BS_VIEWA
         add     esp, 12
         movsx   eax, word [edi + 4]
         push    eax
@@ -761,7 +748,7 @@ selzdraw:
         push    dword [esi + 12]
         push    dword [esi + 8]
         push    dword [esi + 4]
-        call    BS_TRANSA
+        call    BS_VIEWA
         add     esp, 12
         push    dword [esi + 16]
         call    BS_ROTYA
@@ -798,7 +785,7 @@ selzdraw:
         push    0                   ; four jets
         push    dword [sel_zflamey]
         push    0
-        call    BS_TRANSA
+        call    BS_VIEWA
         add     esp, 12
         push    ebx
         call    BS_ROTYA
@@ -901,7 +888,7 @@ selzbounce:
         sub     esp, 4
         fstp    dword [esp]
         push    0
-        call    BS_TRANSA
+        call    BS_VIEWA
         add     esp, 12
 .out:   ret
 ; st0 times the sine of the angle dx (a word); eax, edx spent.
@@ -1325,10 +1312,9 @@ seljagpal:
 SEL_LREG    equ -1
 SEL_GOES    equ 2                   ; a scene object's state: launching
 ; ZF set on the select or a launch from it (A's state).
-SEL_STSEL   equ 4
 SEL_STLAUNCH equ 5
 selstate:
-        cmp     dword [BS_STATEA], SEL_STSEL
+        cmp     dword [BS_STATEA], ST_SELECT
         je      .out
         cmp     dword [BS_STATEA], SEL_STLAUNCH
 .out:   ret
@@ -2077,7 +2063,7 @@ selframex:
 
 ; --- colour ----------------------------------------------------------------
 
-; The loaders' `jg` for an id above 7 comes here. [ebp+8] is the slot,
+; The loader's `jg` for an id above 7 comes here. [ebp+8] is the slot,
 ; [ebp+0xc] the palette id: machine * 4 + side * 2 + which of the pair.
 pal_a:
         mov     edx, BS_PALA
@@ -2090,7 +2076,7 @@ pal_a:
         add     esp, 8
         jmp     BS_PALRETA
 
-; edx the copy's palette table. eax the palette the player's boss wears
+; edx the palette table. eax the palette the player's boss wears
 ; for this id, or 0 to load its own.
 bosspal:
         xor     eax, eax
@@ -2123,7 +2109,7 @@ bosspal:
 ; and over; the eight's hold its last frame, and so does it now. In place
 ; of `cdq; idiv ecx; mov [frame], dx`, five nops after; eax the count, ecx
 ; the pose's frames.
-%macro POSE 2                       ; label, the copy's frame
+%macro POSE 2                       ; label, the frame
 %1:
         cmp     eax, ecx
         jl      %%in
@@ -2141,7 +2127,7 @@ bosspal:
 ; a boss read past them and crashed. A boss is drawn by its own fight
 ; object instead, the way the win screen draws it: its per-frame routine
 ; at [object+4], which ticks and draws it. The object is the one taken
-; standing at the start of its last round (STAND, below), put at the
+; standing at the start of its last round (STAND, above), put at the
 ; turntable's middle; afterwards the real one, its AI state and what else
 ; the routine writes are put back, so nothing moves on. Sound effects are
 ; off while it runs, and the effects it spawns - Jaguarandi's exhaust,
@@ -2255,7 +2241,7 @@ unl_zdraw:
         push    dword [ebx + 0x10]
         push    dword [ebx + 0xc]
         push    dword [ebx + 8]
-        call    BS_TRANSA
+        call    BS_VIEWA
         add     esp, 12
         call    selzdraw
         call    BS_MPOPA
@@ -2275,7 +2261,7 @@ unl_jdraw:
         push    dword [ebx + 0x10]
         push    dword [ebx + 0xc]
         push    dword [ebx + 8]
-        call    BS_TRANSA
+        call    BS_VIEWA
         add     esp, 12
         mov     byte [seljagdraw], 1 ; with its head (selpart_a)
         push    0
@@ -2339,7 +2325,7 @@ unl_jdraw:
 %%skip: jmp     %4
 %endmacro
 
-        NOZSHADE nozshade_a, BS_ZSHTA, BS_ZSHADEA, BS_ZNOSHADEA
+        NOZSHADE nozshade_a, BS_ZTIMA, BS_ZSHADEA, BS_ZNOSHADEA
 
 
 ; Its machine name comes from a table of the eight as well. In place of
@@ -2381,7 +2367,6 @@ unl_jdraw:
 ; the select's cursor sound and the model gone; once it is let go,
 ; Jaguarandi's goes on to the report, and Z-Gradt's to the initials.
 ;
-; Only A, the copy a one-player game is played on.
 UNL_TITLE   equ 0x101a              ; SDB_title
 UNL_PRESSED equ 0x12                ; SDE_type_05, the select's cursor
                                     ; sound: a press taken
@@ -2461,8 +2446,8 @@ unl_save:
 ; and around it); Z-Gradt moves by its own code, which does not, so the
 ; camera stayed put as it turned on the spot. In a round, the player's
 ; Z-Gradt's facing goes to the camera each frame, as the eight's does.
-UNL_FACING  equ 0x184
-UNL_CAMYAW  equ 0x1a
+ZL_FACING  equ 0x184
+ZL_CAMYAW  equ 0x1a
 
 ; Z-Gradt has no jump, and turns only standing still. For the player's,
 ; the jump - both levers out, 0x0206 in the machine's lever word at +0x108
@@ -2477,12 +2462,12 @@ UNL_CAMYAW  equ 0x1a
 ZL_JUMP     equ 0x0206
 ZL_STEP     equ 0x200               ; a frame: a half turn in 64
 ZL_LASER    equ 0x1c4               ; the laser's state in A's AI block
-UNL_LEVERS  equ 0x108
-UNL_X       equ 8
-UNL_Z       equ 0x10
+ZL_LEVERS  equ 0x108
+ZL_X       equ 8
+ZL_Z       equ 0x10
 
 zlock:
-        movzx   eax, word [BS_OBJA + UNL_LEVERS]
+        movzx   eax, word [BS_OBJA + ZL_LEVERS]
         xchg    eax, [zl_prev]
         cmp     dword [BS_READYA], READY_GO
         jl      .off                ; no GET READY yet
@@ -2501,20 +2486,20 @@ zlock:
         ret
 .free:  cmp     eax, ZL_JUMP        ; held from before: no new press
         je      .turn
-        cmp     word [BS_OBJA + UNL_LEVERS], ZL_JUMP
+        cmp     word [BS_OBJA + ZL_LEVERS], ZL_JUMP
         jne     .turn
         mov     dword [zl_on], 1
 .turn:  cmp     dword [zl_on], 0
         je      .done
-        fld     dword [BS_OBJA + UNL_X]
-        fsub    dword [BS_CPUA + UNL_X]
-        fld     dword [BS_CPUA + UNL_Z]
-        fsub    dword [BS_OBJA + UNL_Z]
+        fld     dword [BS_OBJA + ZL_X]
+        fsub    dword [BS_CPUA + ZL_X]
+        fld     dword [BS_CPUA + ZL_Z]
+        fsub    dword [BS_OBJA + ZL_Z]
         fpatan
         fdiv    dword [sel_zturn]
         fistp   dword [zl_ang]
         mov     eax, [zl_ang]
-        sub     ax, [BS_OBJA + UNL_FACING]
+        sub     ax, [BS_OBJA + ZL_FACING]
         movsx   eax, ax             ; the way round that is shorter
         cmp     eax, ZL_STEP
         jle     .lo
@@ -2525,12 +2510,12 @@ zlock:
         mov     eax, -ZL_STEP
         jmp     .step
 .last:  mov     dword [zl_on], 0    ; facing it this frame
-.step:  add     [BS_OBJA + UNL_FACING], ax
+.step:  add     [BS_OBJA + ZL_FACING], ax
 .done:  ret
 .off:   mov     dword [zl_on], 0
         ret
 
-; Each frame, from the tick. A game starts clean as B passes state 1 or 2,
+; Each frame, from the tick. A game starts clean as A passes state 1 or 2,
 ; which only a new game does (0, 1 or 2, then the select); a continue goes
 ; from the lost match's states through 0 to the select, and between stages
 ; through 0 and 3. The game's own count of lost matches will not do: it is
@@ -2573,10 +2558,10 @@ unl_tick:
         jne     .out
 .stand: STAND   BS_CPUA, BS_READYA, BS_BSSA, stand_ca, standai_ca, stood_ca
         cmp     dword [boss], ZGRADT ; the player's Z-Gradt: the camera
-        jne     .out                ; turns with it (UNL_CAMYAW)
+        jne     .out                ; turns with it (ZL_CAMYAW)
         call    zlock
-        mov     ax, [BS_OBJA + UNL_FACING]
-        mov     [BS_ECBLKA + UNL_CAMYAW], ax
+        mov     ax, [BS_OBJA + ZL_FACING]
+        mov     [BS_ECBLKA + ZL_CAMYAW], ax
 .out:   popad
         ret
 
@@ -3085,10 +3070,9 @@ case2_a:
 ;
 ; The flag and the player's global are both gone by the ending; the
 ; object's id and model are what is left, so they decide.
-RAIDEN      equ 3
 
-%macro ENDING 12    ; label, id, model, jag, zgradt, phase, time,
-                    ; resume, phase 1, epilogue, button wait, global
+%macro ENDING 11    ; label, id, model, jag, zgradt, phase, time,
+                    ; resume, phase 1, epilogue (the button wait), global
 %1:
         mov     eax, [%2]
         sub     eax, JAG
@@ -3102,27 +3086,27 @@ RAIDEN      equ 3
         jne     %9
         jmp     %8
 %%boss:
-        mov     eax, [%12]          ; Raiden's for phase 0's animation,
+        mov     eax, [%11]          ; Raiden's for phase 0's animation,
         cmp     eax, JAG            ; the boss's own again after it, for
         jb      %%lent              ; the ranking and the name entry
         mov     [end_g1p], eax
 %%lent: cmp     dword [%6], 0
         jne     %%own
-        mov     dword [%12], RAIDEN
+        mov     dword [%11], SEL_RAIDEN
         jmp     %8
 %%own:  mov     eax, [end_g1p]
         test    eax, eax
         jz      %%phase
-        mov     [%12], eax
+        mov     [%11], eax
 %%phase:
         cmp     dword [%6], 2
         jb      %9
-        je      %11
+        je      %10
         jmp     %10
 %endmacro
 
         ENDING  end_a, BS_IDA, BS_MDLA, BS_JAGA, BS_ZGA, BS_PHASEA, \
-                BS_TIMEA, BS_ENDA, BS_END1A, BS_ENDEA, BS_ENDWA, BS_G1PA
+                BS_TIMEA, BS_ENDA, BS_END1A, BS_ENDEA, BS_G1PA
 
 ; Z-Gradt's part. Its per-frame routine runs the script as the others' do,
 ; and the script sets the charge going (the timer at 1). Z-Gradt's goes:
@@ -3156,7 +3140,7 @@ RAIDEN      equ 3
 ; camera with it - given Z-Gradt where it is drawn.
 ;
 ; On the last stage the player's Z-Gradt keeps its AI state in a bank of
-; its own (AI, above); the live block is then the CPU's.
+; its own (AI, below); the live block is then the CPU's.
 ;
 ; In place of the call to phase 0.
 ZCHARGE     equ 240
@@ -3189,7 +3173,6 @@ BALBAS      equ 7                   ; whose shot code takes only its own slots
         jne     %%fly
         inc     dword [%5]
 %%fly:
-%%which:
         push    eax
         mov     eax, %7             ; eax: the laser's state
         cmp     dword [%9], 0
@@ -3480,7 +3463,7 @@ zbeam_off:
 ESTEP_TURN  equ 0x23a               ; the ending's step the turn starts at
 ESTEP_FADE  equ 64
 
-        ETRANS  etrans_a, BS_ETRA, BS_ECBLKA, BS_IDA, BS_ESTEPA, BS_TIMEA
+        ETRANS  etrans_a, BS_VIEWA, BS_ECBLKA, BS_IDA, BS_ESTEPA, BS_TIMEA
 
 ; --- Z-Gradt's chase camera ------------------------------------------------
 
@@ -3490,8 +3473,10 @@ is_zgradt:
         cmp     dword [boss], ZGRADT
         ret
 
-; In place of a call to the view translate: [esp+4..0xc] are the eye's
-; negated X, Y and Z. Pull it back along the yaw it was placed by.
+; The round's opening shots (0x4db173) stand the eye a set distance from
+; their subject along the yaw at BS_YAW4. In place of their call to the
+; view translate, [esp+4..0xc] the eye's negated X, Y and Z: for the
+; player's Z-Gradt, the eye `pull` further along that yaw.
 %macro PULL 5                       ; label, view, sin, cos, yaw
 %1:
         call    is_zgradt
@@ -3513,23 +3498,39 @@ is_zgradt:
         jmp     %2
 %endmacro
 
-; One stub per yaw: the first two sites share one, as do the last two.
-; The replay's call is not one of them: REPLAY below aims it properly.
+; The replay's call is not this site: REPLAY below aims it itself.
         PULL    cam_4, BS_VIEWA, BS_SINA, BS_COSA, BS_YAW4
-        PULL    cam_5, BS_VIEWA, BS_SINA, BS_COSA, BS_YAW5
 
-; The live camera, once its distance at 0x40 is final: four times it for
-; Z-Gradt. In place of `mov eax, [ebp+CAM_PTR]; movsx eax, word [eax+0x1e]`.
+; The chase camera keeps a distance its mode sets at +0x3c - 56 in the
+; command poses, 78 turning on the spot, 75 or 30 with the CPU close, 30
+; the nearer side - and eases the live one at +0x40 towards it; and a
+; pitch to aim for at +0x1e - 0xc00 in the poses, 0x600 turning, up to
+; 0x3000 as the other jumps - which +0x18 steps towards by 0x600 a frame
+; at most. Z-Gradt's camera is the game's, its modes and their glide and
+; its pan after a jump, but for two things: the distance never closes
+; below zcam_min, the poses' 56, so the camera does not zoom in on it as
+; the CPU comes near, and the pitch never aims below ZCAM_PITCH, so
+; turning on the spot does not level it out. The distance itself is
+; scaled where the eye is placed (zeye_a). In place of `mov eax,
+; [ebp+CAM_PTR]; movsx eax, word [eax+0x1e]`, the pitch's read, once the
+; game's easing of the distance is done with.
+ZCAM_PITCH  equ 0xc00
 %macro LIVE 2                       ; label, resume
 %1:
         call    is_zgradt
         jne     %%stock
-        mov     eax, [ebp + CAM_PTR]
-        fld     dword [eax + 0x3c]
-        fmul    dword [scale]
-        fstp    dword [eax + 0x3c]
-        fld     dword [eax + 0x3c]
-        fstp    dword [eax + 0x40]
+        mov     ecx, [ebp + CAM_PTR]
+        fld     dword [ecx + 0x3c]
+        fcomp   dword [zcam_min]
+        fnstsw  ax
+        test    ah, 1               ; C0: under the least
+        jz      %%pitch
+        mov     eax, [zcam_min]
+        mov     [ecx + 0x3c], eax
+%%pitch:
+        cmp     word [ecx + 0x1e], ZCAM_PITCH
+        jge     %%stock
+        mov     word [ecx + 0x1e], ZCAM_PITCH
 %%stock:
         mov     eax, [ebp + CAM_PTR]
         movsx   eax, word [eax + 0x1e]
@@ -3537,6 +3538,34 @@ is_zgradt:
 %endmacro
 
         LIVE    live_a, BS_LIVEA
+
+; The bosses are bigger than the eight, and the chase camera framed for
+; them crowds Jaguarandi and stands inside Z-Gradt. A boss's camera
+; stands jcam_k or zcam_k times as far, taken where the eye is placed
+; from the live distance - the radius, for x and again for z, and the
+; height - so the game's modes and its glide between them are as they
+; are; Z-Gradt's never
+; nearer than zcam_near, which its modes with the CPU close would go
+; under. In place of `mov eax, [ebp+CAM_PTR]; fmul dword [eax+0x40]`, a
+; nop after; st0 the sine or cosine the distance scales.
+zeye_a:
+        mov     eax, [ebp + CAM_PTR]
+        fld     dword [eax + 0x40]
+        cmp     dword [boss], JAG
+        jne     .z
+        fmul    dword [jcam_k]
+        jmp     .mul
+.z:     cmp     dword [boss], ZGRADT
+        jne     .mul
+        fmul    dword [zcam_k]
+        fcom    dword [zcam_near]
+        fnstsw  ax
+        test    ah, 1               ; C0: under the least
+        jz      .mul
+        fstp    st0
+        fld     dword [zcam_near]
+.mul:   fmulp   st1, st0
+        ret
 
 ; --- Z-Gradt against Z-Gradt -----------------------------------------------
 
@@ -3563,7 +3592,7 @@ is_zgradt:
 
 ; Z-Gradt's init wipes the boss globals the CPU's has just set. The
 ; player's returns before it does.
-%macro INIT 3                       ; label, resume, the copy's stage
+%macro INIT 3                       ; label, resume, the stage
 %1:
         LAST    %%stock, %3
         IF_PLAYER dword [esp + 4], %%skip
@@ -3585,7 +3614,7 @@ is_zgradt:
 ; after the landing.
 %macro FLY 6                        ; label, resume, after landing,
 %1:                                 ; epilogue, Z-Gradt's model global,
-                                    ; the copy's stage
+                                    ; the stage
         LAST    %%stock, %6
         IF_PLAYER dword [esp + 4], %%skip
 %%stock:
@@ -3643,14 +3672,15 @@ is_zgradt:
 
 ; The player's Z-Gradt's fly-in runs on the timer: under 120 it comes in
 ; along the arena at height 70, to 200 it slows and pitches over, then it
-; drops till it lands. Where the arena is in the way it starts later
-; (zf_start, by the arena loaded): indoors - Deathtrap, Spaceport, the
-; Secret Base (FC_Fact, FC_Dock, FC_Core) - at 199, the one frame before
-; the drop putting it in place, so it only drops; halfway, at 100, where
-; it flew through the Flooded City's buildings and the Ruins (FC_Tro,
-; FC_Inka); and at 60 for the Green Hills' mountains (FC_Fore). Its place is worked
-; out from the timer each frame; its pitch is set as the frames skipped
-; would have left it. In place of Z-Gradt's init's `mov dword [fly-in
+; drops till it lands. From 0 it would come in from 2800 out, through
+; the arena's backdrop, so it starts part of the way in (zf_start, by the
+; arena loaded): indoors - Deathtrap, Spaceport, the Secret Base
+; (FC_Fact, FC_Dock, FC_Core) - at 199, the one frame before the drop
+; putting it in place, so it only drops; outdoors at 100, 784 out, short
+; of the Flooded City's buildings and the Ruins (FC_Tro, FC_Inka) and
+; inside the open arenas' skies; and at 60 for the Green Hills' mountains
+; (FC_Fore). Its place is worked out from the timer each frame; its pitch
+; is set as the frames skipped would have left it. In place of Z-Gradt's init's `mov dword [fly-in
 ; timer], 0`, five nops after the call; [ebp+8] the object.
 ZF_SLOW     equ 120                 ; the timer: slowing, pitching over
 ZF_LEVEL    equ 0x4000              ; the pitch till then, and its easing
@@ -3671,8 +3701,6 @@ zflyin_a:
         cmp     ecx, ZF_ARENAS
         jae     .kept
         mov     ecx, [zf_start + ecx * 4]
-        test    ecx, ecx
-        jz      .kept
         mov     [BS_ZTIMA], ecx
         sub     ecx, ZF_SLOW        ; pitched as the frames before leave it
         jge     .ease
@@ -3738,7 +3766,7 @@ zready_a:
 ; The player's Z-Gradt gets its own copy of the model header, made once,
 ; so the CPU's writes to it do not move both.
 %macro CLONE 5                      ; label, resume, copy, copied flag,
-                                    ; the copy's stage
+                                    ; the stage
 %1:
         push    ebp
         mov     ebp, esp
@@ -3828,7 +3856,7 @@ ZTAB_4      equ 0x260
         mov     dword [%4 + %8], -1
         mov     dword [%4 + %9], -1
         mov     dword [%6], 1
-        push    eax                 ; the player's side's tables (ZTABLE)
+        push    eax                 ; the player's side's tables (ZTAB_2..4)
         mov     eax, [esp + 8]
         cmp     dword [eax + 0x68], 0
         mov     eax, BS_ZTAB0
@@ -3865,7 +3893,7 @@ ZTAB_4      equ 0x260
 ; state (AI, banked_a) is dropped here and taken afresh from the CPU's,
 ; just initialised, on its first tick of the round.
 ;
-; In place of the call to Z-Gradt's setup, both sites per copy.
+; In place of the call to Z-Gradt's setup, both sites.
 %macro ZINIT 2                      ; label, the setup
 %1:
         mov     dword [banked_a], 0
@@ -4040,7 +4068,7 @@ zswap:
 ; --- Z-Gradt's gold --------------------------------------------------------
 
 ; The laser turns Z-Gradt gold through a palette event, 0x21f, and 0x200
-; puts its own palette back. The handlers (0x4c2630, 0x4f3889) take a boss
+; puts its own palette back. The handler (0x4f3889) takes a boss
 ; to be the CPU and write the CPU's slots, so a player's Z-Gradt turned its
 ; opponent gold, then Z-Gradt-coloured. Where Z-Gradt's tick posts the
 ; event, note whether the player's object posted it; the handlers then use
@@ -4107,7 +4135,7 @@ zswap:
         jmp     %2
 %endmacro
 
-        RESTORE zrest_a, BS_ZRA5, BS_ZRA1, BS_ZRAX, BS_LOADA
+        RESTORE zrest_a, BS_ZRA5, BS_ZRA1, BS_ZRAX, BS_PALLOADA
 
 ; As a Z-Gradt dies its palettes darken, events 0x401 to 0x43f, each range
 ; with the same test of the side. A player's Z-Gradt keeps the colours it
@@ -4192,7 +4220,9 @@ WIN_TRIES   equ 0x10000 / 0x80
 ; a yaw and the eye, applied as rotate x by pitch, rotate y by -yaw,
 ; translate by the eye negated. In place of that translate: move the eye
 ; back along where it looks, (-sin yaw cos pitch, -sin pitch, cos yaw cos
-; pitch) - the convention the win camera's shots place their eye by.
+; pitch) - the convention the win camera's shots place their eye by -
+; but never down: a shot looking up from low would take the eye through
+; the floor, so that one goes back across the ground alone.
 %macro REPLAY 7                     ; label, view translate, sin, cos,
 %1:                                 ; pitch, yaw, the player's id
         mov     eax, [%7]
@@ -4228,8 +4258,14 @@ WIN_TRIES   equ 0x10000 / 0x80
         push    ecx
         call    %3                  ; sin pitch
         add     esp, 4
-        fmul    dword [pullk]
-        fsubr   dword [esp + 8]
+        fmul    dword [pullk]       ; the rise
+        ftst
+        fnstsw  ax
+        test    ah, 1               ; C0: a drop
+        jz      %%rise
+        fstp    st0
+        jmp     %2
+%%rise: fsubr   dword [esp + 8]
         fstp    dword [esp + 8]
         jmp     %2
 %endmacro
@@ -4270,7 +4306,10 @@ stood_ca: dd    0                   ; the CPU's boss, standing
 
         align   4
 pull:   dd      320.0               ; how far back the eye goes
-scale:  dd      4.0                 ; and the live camera's distance
+zcam_k: dd      2.5                 ; the chase camera's distance, times
+jcam_k: dd      1.5                 ; the game's, Z-Gradt's and Jaguarandi's
+zcam_min: dd    56.0                ; and the least Z-Gradt's closes to
+zcam_near: dd   180.0               ; and the least its eye stands out
 ecam_jag: dd    2.5                 ; the ending's camera, how far out
 ecam_z: dd      4.0
 ecam_zfly: dd   8.0
@@ -4298,7 +4337,7 @@ zspd_at: dd     0
 zspd_k: dd      3.0
 zslow:  dd      0
 end_g1p: dd     0                   ; the boss's machine, lent out
-zstage: dd      0                   ; which part of it (zfake)
+zstage: dd      0                   ; and which part of it (ZEND)
 eside:  dd      0.0046875           ; how far off to the side, of the way
 eside_n: dd     0                   ; to the target, over ESTEP_FADE: 0.3
 rm_jag: dd      0.6, 4.0, 0.0       ; the report's model: scale, the
@@ -4311,15 +4350,15 @@ zr_wait: dd     0                   ; frames GET READY has been held
 zl_prev: dd     0                   ; the player's levers last frame
 zl_on:  dd      0                   ; turning to face the CPU
 zl_ang: dd      0                   ; the way to it
-zf_start: dd    0, 199, 0, 60, 100, 199, 0, 100, 0, 199 ; the player's
-                                    ; Z-Gradt's fly-in, by arena: Air,
-                                    ; Fact, Water, Fore, Inka, Dock, Moon,
-                                    ; Tro, Fld, Core (0 the whole of it)
+zf_start: dd    100, 199, 100, 60, 100, 199, 100, 100, 100, 199 ; the
+                                    ; player's Z-Gradt's fly-in, by arena:
+                                    ; Air, Fact, Water, Fore, Inka, Dock,
+                                    ; Moon, Tro, Fld, Core
 win_z:  dd      4.0                 ; win and lose: the subject's distance
 win_jag: dd     2.0                 ; times this
 win_35: dd      35.0                ; the two a shot sets as constants
 win_30: dd      30.0
-rep_z:  dd      240.0               ; the replay: how far further back
+rep_z:  dd      120.0               ; the replay: how far further back
 rep_jag: dd     80.0
 pullk:  dd      0
 pullh:  dd      0

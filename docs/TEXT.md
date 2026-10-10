@@ -32,7 +32,8 @@ nothing: the phrase is stored as 126 tile indices, and the letterforms are
 | `HOLD TO SKIP` | ending credits | in the patch | GDI. Not the game's - it is carried in `overlay.asm` and drawn at 320, 440 of the picture, computed from the mode size, halved with everything else in low resolution |
 | `Bindings - %dP side` | bind page title | `0x26c88c` | C string the page's `SetWindowTextA` formats; replaces the stock title so both sides are told apart |
 | `1P side` → `Actions` | bind page label | `0x60b34e` | UTF-16, inside the dialog template in `.rsrc`. Baked-in text the stock game showed on the 2P pass too; the replacement must stay seven characters |
-| `R-WEAPON`, `L-WEAPON`, `RL-WEAPON` → `AUTOBAZOOKA`, `V.MISSILE`, `SPLITLASER` (Jaguarandi) and `T.RING BEAM`, `E.BARRAGE`, `MINEFIELD` (Z-Gradt) | the HUD's weapon gauges | `0x63c1d4`, `0x63c8a4`, `0x63d9b4`, `0x63e084` | tile font, three 16-byte slots in each boss's model header, one header per copy of the game. **Playable bosses** writes them; the select's weapon lines for the bosses are the patch's own strings in `bosses.asm` |
+| `R-WEAPON`, `L-WEAPON`, `RL-WEAPON` → `AUTOBAZOOKA`, `V.MISSILE`, `SPLITLASER` (Jaguarandi) and `T.RING BEAM`, `E.BARRAGE`, `MINEFIELD` (Z-Gradt) | the HUD's weapon gauges | `0x23b5d4`, `0x23bca4`, `0x23cdb4`, `0x23d484` | tile font, three 16-byte slots in each boss's model header, one header per copy of the game. **Playable bosses** writes them; the select's weapon lines for the bosses are the patch's own strings in `bosses.asm` |
+| `Z-GRAT`, `JAGARANDI` → `Z-GRADT`, `JAGUARANDI` | the scoreboard | `0x2bb008` | C strings, 12-byte slots in the game's own name table, misspelt as shipped. **Playable bosses** writes them |
 
 The tile font table around `0x285df0` also holds `INSERT COIN(S)`,
 `TO BE CONTINUED ...`, `MOVE  FORWARD`, `DASH  BUTTON`, the mech names and

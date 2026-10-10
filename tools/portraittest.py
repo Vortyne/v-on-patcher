@@ -18,6 +18,7 @@ for byte, and the patch alone must leave bosses.bin unwritten.
 
 import os
 import shutil
+import struct
 import sys
 import tempfile
 
@@ -41,7 +42,7 @@ def read_back(vp, art):
 
 
 def section_names(data):
-    import struct
+    """The names of the executable's sections, in header order."""
     pe = struct.unpack_from('<I', data, 0x3c)[0]
     nsec = struct.unpack_from('<H', data, pe + 6)[0]
     optsz = struct.unpack_from('<H', data, pe + 20)[0]
@@ -58,9 +59,7 @@ def main(gamedir):
     if build is None:
         return 'not found, or not a build with tables: %s' % exe_src
     if not vp.feature_supported('bosses', build):
-        print('note: the bosses patch is not ported to %s, nothing to read'
-              % build.name)
-        return None
+        return 'the bosses patch is not ported to %s: nothing to read' % build.name
     art_name, _size, art_md5 = build.art
     art_src = os.path.join(gamedir, art_name)
     if not os.path.exists(art_src):
@@ -128,12 +127,9 @@ def main(gamedir):
             return 'FAILED - %s did not restore byte for byte' % art_name
         print('restore: both files byte for byte')
 
-        # Unticked, the patch leaves nothing: no section, and the same
-        # bytes as a run with every other patch on.
-        wanted = vp.default_state()
-        wanted['bosses'] = wanted['bossunlock'] = False
+        # Unticked (the default), the patch appends no section.
         plain, _applied, _skipped = vp.apply_selected(bytearray(exe_before),
-                                                      wanted, build)
+                                                      vp.default_state(), build)
         if section in section_names(plain):
             return 'FAILED - %s appended with the patch unticked' % section
         print('unticked: no %s section' % section)

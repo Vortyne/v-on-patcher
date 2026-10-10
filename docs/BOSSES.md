@@ -22,9 +22,9 @@ only a new game from the title starts a clean one.
 Each unlock is announced on a screen of its own: the boss turning on the
 left of a black screen, YOU UNLOCKED and its name on the right in the
 select's lettering, and the title jingle. PRESS BUTTON TO CONTINUE flashes
-at the bottom after a few seconds, and only a fresh press moves on - a
+at the bottom after five seconds, and only a fresh press moves on - a
 button held from the fight does not skip it. The press is answered with
-the select's confirm sound, and the boss leaves the screen with it.
+the select's cursor sound, and the boss leaves the screen with it.
 
 Jaguarandi's screen comes straight after it falls, before the Player Data
 Report; Z-Gradt's after the credits, before the initials. The game then
@@ -61,24 +61,32 @@ unpatched game never reads it.
 - Both bosses play as player machines, every stage, including Z-Gradt
   against Z-Gradt on the last one.
 - The KO replay and the win and lose shots pull back to frame a boss's
-  size; on a small arena the win shots that need floor under the camera
-  fall back to the usual distance rather than search for ever.
-- Z-Gradt's chase camera is pulled back out of its body, and turns with
-  it as it turns on the spot.
-- Z-Gradt's fly-in is shortened where the arena is in the way: indoors
-  (Deathtrap, the Spaceport, the Secret Base) it only drops into place, and
-  over the Flooded City, the Ruins and the Green Hills it starts part of the
-  way in. GET READY's count waits for it to land before the round starts;
+  size, the replay's never downwards; on a small arena the win shots that
+  need floor under the camera fall back to the usual distance rather than
+  search for ever.
+- The bosses' chase camera is the game's own - its modes, its glide
+  between them, its pan as the opponent jumps - stood further out: two and
+  a half times as far for Z-Gradt, half as far again for Jaguarandi.
+  Z-Gradt's never closes in as the opponent comes near, and never levels
+  out below its high angle as it turns on the spot; it turns with Z-Gradt.
+- Z-Gradt's fly-in starts part of the way in rather than from beyond the
+  arena's backdrop: indoors (Deathtrap, the Spaceport, the Secret Base) it
+  only drops into place, and outdoors it comes in from 784 units out,
+  nearer still over the Green Hills. GET READY's count waits for it to
+  land before the round starts, 600 frames at the most;
   on the last stage, where the CPU's Z-Gradt flies in instead, the round
   starts as it always did.
 - Z-Gradt has no jump. The jump - both levers out, or the jump key - turns
-  it to face the opponent instead, a half turn in about a second, the
+  it to face the opponent instead, a half turn in 64 frames, the
   camera with it; not while its super laser is out.
 - Z-Gradt's laser turns the right Z-Gradt gold when both are on the field,
   and a Z-Gradt that falls darkens alone: the player's keeps the colours it
   was given.
 - The Player Data Report after stage 5 turns the boss itself: Jaguarandi
   in its select pose, as on its unlock screen, and Z-Gradt standing.
+- The scoreboard names them Z-GRADT and JAGUARANDI; the game's own table
+  has them as Z-GRAT and JAGARANDI, which no one saw while they could not
+  be played.
 - The ending plays for a boss: Jaguarandi fires its own weapon at the moon
   gate and Z-Gradt its own charge and laser, then the text and the button
   wait. The staff roll is skipped: its battle-damaged model is one the
@@ -89,16 +97,17 @@ unpatched game never reads it.
 - One player only, by design: the bosses are far stronger than the eight,
   so two-player and internet play keep the select to the eight for a fair
   fight, and nothing here runs there.
-- The bosses' weapons have no ammo: Z-Gradt's shots skip the game's
-  charge counting, so its three gauges stay full, and Jaguarandi's refill
-  faster than it can fire. Its super laser has no gauge, as no machine has
-  a fourth.
+- The bosses' weapons have no ammo to speak of, as the game's own code
+  has them: Z-Gradt's shots are made outside the charge counting, so its
+  three gauges stay full, and Jaguarandi's refill faster than it can fire.
+  Its super laser has no gauge, as no machine has a fourth.
 - `bosses.bin` is written beside the game when a boss is unlocked. Where
   the folder cannot be written, the unlock screen still shows but the
   unlock is lost at exit.
-- Jaguarandi's model file, `RB_jag.bin`, is read when the select first
-  draws it. If the read fails it is drawn from whatever the model pool
-  holds there, until a fight loads it.
+- The bosses' model files, `RB_jag.bin` and `RB_zig.bin`, are read into
+  blocks of the patch's own when the select first draws each. If a read
+  fails, that boss is drawn from whatever the model pool holds in its
+  slot, until a fight loads it.
 
 ## How it works
 
@@ -117,9 +126,9 @@ in one player only. The sections below follow the file.
 The blob has a section of its own, `.vobs`, that the patcher appends only
 when the box is ticked, so unticked it leaves the executable as the other
 patches alone would. Its buffers - the bosses' motions, the model and AI
-copies, the saved palettes and the rest, about 230 KB - are gathered at
+copies, the saved palettes and the rest, 233,385 bytes - are gathered at
 its end, and the file carries the blob only as far as its last byte that
-is not zero, 15 KB; the rest is the section's virtual size, which Windows
+is not zero, 14,851 bytes; the rest is the section's virtual size, which Windows
 zeroes at load (`OWN_SECTIONS`).
 
 ### The select's row
@@ -244,6 +253,6 @@ with the texture bank the fights had loaded reloaded.
   combinations of patches, including the two boss boxes with and without
   each other; `python3 tools/portraittest.py` on the game folder reads the
   portraits back out of `escrgame.bin`. `tools/check.py` runs both.
-- The per-frame tick runs from the loop's idle call, which the loop skips
-  on a frame with F10, F3 or Alt in the message queue; the unlock screen's
+- The per-frame tick runs from the loop's idle call, which the loop's
+  message check (`0x5c6783`) skips on a frame with F10, F3 or Alt queued; the unlock screen's
   state is cleared only by its own button press.

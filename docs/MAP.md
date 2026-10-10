@@ -30,19 +30,19 @@ is stale, so the line numbers are current.
 | Lines | Region | Starts with |
 | --- | --- | --- |
 | 1–38 | header, imports, PE helpers | `#!/usr/bin/env python3` |
-| 39–2639 | widescreen: the layouts, `UI_CODE`, the port tables, the site builder | `# The resolution patch: the` |
-| 2640–2782 | widescreen apply: `hires_install`, section append, F4 table | `def hires_install(buf, width` |
-| 2783–2880 | disc images table, `Build` class, annex order | `DISC_IMAGES = {` |
-| 2881–3968 | the four builds: symbols, caves, site maps | `RETAIL = Build('English reta` |
-| 3969–4990 | generated site maps for the other three builds (`tools/buildsites.py`) | `# SITES JPRE BEGIN` |
-| 4991–15349 | the blobs, `BLOBS`, and `link()` | `BLOBS = {` |
-| 15350–16128 | banner and credit bitmaps, tile expansion | `LEVERS_CODE = link('LEVERS',` |
-| 16129–17113 | the patch table: `FEATURES`, `BY_KEY`, labels, tips, apply order | `FEATURES = [` |
-| 17114–17961 | ripping (`RAW = 2352`) and installing (`LOGICAL = 2048`) | `# --- ripping --------------` |
-| 17962–18814 | netplay setup, `SYNC_SITES`, cnc-ddraw, CD audio | `# --- netplay --------------` |
-| 18815–19336 | `Patcher`: reading a file, applying, restoring | `class Patcher:` |
-| 19337–19904 | the logo and icon (`tools/assets.py`), then the window strings | `# ASSETS BLOB BEGIN - tools/` |
-| 19905–21941 | the window (`run_tk`), the CLI, `main` | `def run_tk():` |
+| 39–2640 | widescreen: the layouts, `UI_CODE`, the port tables, the site builder | `# The resolution patch: the` |
+| 2641–2783 | widescreen apply: `hires_install`, section append, F4 table | `def hires_install(buf, width` |
+| 2784–2881 | disc images table, `Build` class, annex order | `DISC_IMAGES = {` |
+| 2882–3956 | the four builds: symbols, caves, site maps | `RETAIL = Build('English reta` |
+| 3957–4980 | generated site maps for the other three builds (`tools/buildsites.py`) | `# SITES JPRE BEGIN` |
+| 4981–15341 | the blobs, `BLOBS`, and `link()` | `BLOBS = {` |
+| 15342–16120 | banner and credit bitmaps, tile expansion | `LEVERS_CODE = link('LEVERS',` |
+| 16121–17119 | the patch table: `FEATURES`, `BY_KEY`, labels, tips, apply order | `FEATURES = [` |
+| 17120–17967 | ripping (`RAW = 2352`) and installing (`LOGICAL = 2048`) | `# --- ripping --------------` |
+| 17968–18819 | netplay setup, `SYNC_SITES`, cnc-ddraw, CD audio | `# --- netplay --------------` |
+| 18820–19342 | `Patcher`: reading a file, applying, restoring | `class Patcher:` |
+| 19343–19910 | the logo and icon (`tools/assets.py`), then the window strings | `# ASSETS BLOB BEGIN - tools/` |
+| 19911–21947 | the window (`run_tk`), the CLI, `main` | `def run_tk():` |
 <!-- REGIONS END -->
 
 ## 3. `v_on.exe`
@@ -138,7 +138,7 @@ first is there on every run, the other four only with their patch.
 
 | Section | VA | Size | Appended by | Holds |
 | --- | --- | --- | --- | --- |
-| `.vojp` | `0x36b5000` | `0x1400` | every run | the annex: every blob but the two below, in `ANNEX_BLOBS` order |
+| `.vojp` | `0x36b5000` | `0x1400` | every run | the annex: every blob but the three below, in `ANNEX_BLOBS` order |
 | `.vobs` | `0x36b7000` | `0x3c9ac` | Playable bosses | `bosses.asm`, its code and tables, then its buffers (virtual, not on disk) |
 | `.voxt` | `0x36f4000` | `0x40c` | Disable menu bar | the F11 dialog template, then `voxt.asm` |
 | `.vocd` | `0x36f5000` | `0xbac` | No disc required | `vocd.asm` and its track table |
@@ -188,4 +188,4 @@ within 16 KB of each other.
 | sound | 5 | `0x458d89`, `0x5719c9`, `0x58a146–0x58a152`, `0x6bcc60` |
 | movie | 10 | the PE header, `0x4d6cc8`, `0x54e842`, `0x590825`, `0x5c64e7`, `0x6c8878`, the annex |
 | credits | 5 | `0x5c6500`, `.rdata 0x5fdac8`, `0x6bcd54`, the annex |
-| bosses | 146 | 19 runs from `0x404db7` to `0x5e0254`, `.rdata 0x5ff238` and `0x63c1d4–0x63e084` (the bosses' weapon names), plus its section |
+| bosses | 148 | 18 runs from `0x404db7` to `0x5e0254`, `.rdata 0x5ff238` and `0x63c1d4–0x63e084` (the bosses' weapon names), `.data 0x6bc208` (the scoreboard's), plus its section |
