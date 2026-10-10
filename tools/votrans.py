@@ -154,6 +154,26 @@ HAND = {'d19320bdc3381a48228990907910a391': ({           # Japanese rerelease
     0x006035ac: 0x00601dac,                           # .rsrc: the directory is -0x1800,
                                                       # the dialog data -0x180c
     0x0000023f: 0x0000023f, 0x000000a8: 0x000000a8,   # PE header: same section order
+    # bosses: sites the map places by function but cannot align - the select's
+    # launch and the palette event handler hold jump tables, and the chase
+    # camera and Z-Gradt's clone are split differently - placed by the
+    # instructions that follow each, in order where a stretch repeats
+    0x0000593f: 0x0000593f, 0x0000594e: 0x0000594e,
+    0x000f3e48: 0x000f36d8, 0x000f3ecd: 0x000f375d,
+    0x000f3f3d: 0x000f37cd, 0x000f3fcd: 0x000f385d,
+    0x0011297d: 0x00111edd, 0x001129f8: 0x00111f58,
+    0x00112a2c: 0x00111f8c, 0x00112a60: 0x00111fc0,
+    0x0019f6a5: 0x0019e545, 0x0019f6f4: 0x0019e594,
+    0x0019f71e: 0x0019e5be, 0x0019f780: 0x0019e620,
+    0x0019f7aa: 0x0019e64a, 0x0019f8bd: 0x0019e75d,
+    0x0019f8c1: 0x0019e761, 0x0019f8ec: 0x0019e78c,
+    0x0019f91f: 0x0019e7bf, 0x0019f9c1: 0x0019e861,
+    0x0019fc26: 0x0019eac6, 0x0019fc2c: 0x0019eacc,
+    0x0019fc3d: 0x0019eadd, 0x0019fc64: 0x0019eaf2,
+    0x0019fc97: 0x0019eb24, 0x0019fccb: 0x0019eb59,
+    0x001a0c81: 0x0019fb21, 0x001a0e80: 0x0019fd20,
+    0x001a0e84: 0x0019fd24, 0x001a0eaf: 0x0019fd4f,
+    0x001a0ee2: 0x0019fd82,
 }, {
     0x004977c6: 0x00497764,                           # kbpage: the 2P-key accept label,
                                                       # its two loads the other way round

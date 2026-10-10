@@ -101,7 +101,7 @@ CHECKS = [
     ('credit', 'the credit line reads back out of the roll',
      [PY, 'tools/credittest.py', '{game}'], True, False),
     ('portrait', 'the boss portraits read back as written',
-     [PY, 'tools/portraittest.py', '{game}'], True, False, ('retail', 'oem')),
+     [PY, 'tools/portraittest.py', '{game}'], True, False),
     ('uiemu', 'the resolution blob run under Unicorn',
      [PY, 'tools/uiemu.py', '{exe}'], True, False, ('retail',)),
 ]
