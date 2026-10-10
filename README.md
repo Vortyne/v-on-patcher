@@ -246,8 +246,7 @@ The offsets and internals of every patch are in [NOTES.md](docs/NOTES.md).
   and the countdown runs 20 seconds longer. With Machine Color Select on, a
   boss can wear any of the colours. The report after stage 5 turns the boss
   itself. One player only, on purpose - they are too strong for a fair
-  two-player fight. Unticked by default, and only on the English retail and
-  USA OEM builds so far.
+  two-player fight. Unticked by default.
 - **Pre-unlock the bosses** - both bosses selectable from the start: writes
   `bosses.bin` with both unlocked. Needs Playable bosses, never lowers
   progress already made, and is left alone by **Restore original**.

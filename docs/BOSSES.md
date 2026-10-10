@@ -7,9 +7,6 @@ beating them and chosen on the machine select like the eight. The patch is
 earning. The source is [`asm/bosses.asm`](../asm/bosses.asm); this page says
 what it does, then how.
 
-Builds: the English retail and the USA OEM. The two Japanese builds offer
-both boxes greyed.
-
 ## For players
 
 ### Unlocking
