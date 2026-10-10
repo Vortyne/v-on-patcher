@@ -2761,7 +2761,8 @@ NAME = 'v-on-patcher'
 # and the line the patched game prints on its title screen.
 LABEL = 'V-On Patcher'
 LOGO_CREDIT = 'Logo by SirRockEmSockEm'
-BOSSES_CREDIT = 'Playable bosses by Vortyne'
+BOSSES_CREDIT = 'Playable bosses by '
+BOSSES_AUTHOR = 'Vortyne'
 BOSSES_URL = 'https://github.com/Vortyne'
 REPO_URL = 'https://github.com/pairomaniac/v-on-patcher'
 
@@ -16661,8 +16662,7 @@ FEATURES = [
      '\trow moving left to make room, and the countdown runs\n'
      '\t20 seconds longer.\n'
      'Colour\tWith Machine Color Select on, up and down on a boss\n'
-     '\tgive it any of the colours the eight have.\n'
-     'By\tVortyne.', [
+     '\tgive it any of the colours the eight have.', [
          # The select: the bosses' palettes and Z-Gradt's lift, from the
          # loop's idle call, both sites.
          #
@@ -21392,11 +21392,17 @@ def run_tk():
                 parent, text=LOGO_CREDIT, style='Card.TLabel',
                 foreground=self.dim, font=self.small)).pack(
                     anchor='w', pady=(1, 0))
-            by = self._static_label(ttk.Label(
-                parent, text=BOSSES_CREDIT, style='Link.TLabel',
-                font=self.small, cursor='hand2'))
+            # One line, the name alone a link: two labels side by side.
+            by = ttk.Frame(parent, style='Card.TFrame')
             by.pack(anchor='w', pady=(1, 0))
-            by.bind('<Button-1>', lambda _e: webbrowser.open(BOSSES_URL))
+            self._static_label(ttk.Label(
+                by, text=BOSSES_CREDIT, style='Card.TLabel',
+                foreground=self.dim, font=self.small)).pack(side='left')
+            name = self._static_label(ttk.Label(
+                by, text=BOSSES_AUTHOR, style='Link.TLabel',
+                font=self.small, cursor='hand2'))
+            name.pack(side='left')
+            name.bind('<Button-1>', lambda _e: webbrowser.open(BOSSES_URL))
             # A ttk separator takes the theme's colour, which is not one of
             # ours; a one pixel frame in the palette's line colour is.
             tk.Frame(parent, height=1, background=PALETTE['line'],

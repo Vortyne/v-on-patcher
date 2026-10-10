@@ -31,18 +31,18 @@ is stale, so the line numbers are current.
 | --- | --- | --- |
 | 1–38 | header, imports, PE helpers | `#!/usr/bin/env python3` |
 | 39–2639 | widescreen: the layouts, `UI_CODE`, the port tables, the site builder | `# The resolution patch: the` |
-| 2640–2781 | widescreen apply: `hires_install`, section append, F4 table | `def hires_install(buf, width` |
-| 2782–2879 | disc images table, `Build` class, annex order | `DISC_IMAGES = {` |
-| 2880–3967 | the four builds: symbols, caves, site maps | `RETAIL = Build('English reta` |
-| 3968–4989 | generated site maps for the other three builds (`tools/buildsites.py`) | `# SITES JPRE BEGIN` |
-| 4990–15348 | the blobs, `BLOBS`, and `link()` | `BLOBS = {` |
-| 15349–16127 | banner and credit bitmaps, tile expansion | `LEVERS_CODE = link('LEVERS',` |
-| 16128–17113 | the patch table: `FEATURES`, `BY_KEY`, labels, tips, apply order | `FEATURES = [` |
+| 2640–2782 | widescreen apply: `hires_install`, section append, F4 table | `def hires_install(buf, width` |
+| 2783–2880 | disc images table, `Build` class, annex order | `DISC_IMAGES = {` |
+| 2881–3968 | the four builds: symbols, caves, site maps | `RETAIL = Build('English reta` |
+| 3969–4990 | generated site maps for the other three builds (`tools/buildsites.py`) | `# SITES JPRE BEGIN` |
+| 4991–15349 | the blobs, `BLOBS`, and `link()` | `BLOBS = {` |
+| 15350–16128 | banner and credit bitmaps, tile expansion | `LEVERS_CODE = link('LEVERS',` |
+| 16129–17113 | the patch table: `FEATURES`, `BY_KEY`, labels, tips, apply order | `FEATURES = [` |
 | 17114–17961 | ripping (`RAW = 2352`) and installing (`LOGICAL = 2048`) | `# --- ripping --------------` |
 | 17962–18814 | netplay setup, `SYNC_SITES`, cnc-ddraw, CD audio | `# --- netplay --------------` |
 | 18815–19336 | `Patcher`: reading a file, applying, restoring | `class Patcher:` |
 | 19337–19904 | the logo and icon (`tools/assets.py`), then the window strings | `# ASSETS BLOB BEGIN - tools/` |
-| 19905–21935 | the window (`run_tk`), the CLI, `main` | `def run_tk():` |
+| 19905–21941 | the window (`run_tk`), the CLI, `main` | `def run_tk():` |
 <!-- REGIONS END -->
 
 ## 3. `v_on.exe`
