@@ -671,10 +671,13 @@ phase machine on `0x1ad0964`: 0 and 1 are the ending cutscene and the
 mission complete screen, 2 is the roll, anything else falls through to a
 tail that stops the music and moves on.
 
-The one a finished game reaches is state 32 of the main-game machine
-`0x1ef9eb0`, whose draw table is `0x606fa0`; entry 32 is `0x44a523`, a
-phase machine on `0xbf073c` that runs the roll through `0x4489d6` in its
-phase 2. The title machine's logic table is `0x5ff1c0`.
+The second player's machine `0x1ef9eb0` has the same sequence as its
+state 32: its draw table is `0x606fa0`, entry 32 is `0x44a523`, a phase
+machine on `0xbf073c` that runs the roll through `0x4489d6` in its phase
+2. Its tick, `0x40f528`, is only called from the loop's two-player branch
+(`0x5c61dd`), so a finished one-player game reaches the roll through the
+title machine's `0x20`, as the Credits button does. The title machine's
+logic table is `0x5ff1c0`.
 
 Both read the same block list and the same map, so the credit line lands in
 either; only the scenery behind them differs. Skipping is one write,

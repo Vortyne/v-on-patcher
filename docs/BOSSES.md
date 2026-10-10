@@ -21,13 +21,13 @@ both boxes greyed.
 
 A continue is a lost match, and changing the difficulty spoils the run;
 only a new game from the title starts a clean one.
-Each unlock is announced on a screen of its own:
-the boss turning on the left of a black screen, YOU UNLOCKED and its name
-on the right in the select's lettering, and the title jingle. PRESS BUTTON
-TO CONTINUE flashes at the bottom after a few seconds, and only a fresh
-press moves on - a button held from the fight does not skip it. The press
-is answered with the select's confirm sound, and the boss leaves the
-screen with it.
+
+Each unlock is announced on a screen of its own: the boss turning on the
+left of a black screen, YOU UNLOCKED and its name on the right in the
+select's lettering, and the title jingle. PRESS BUTTON TO CONTINUE flashes
+at the bottom after a few seconds, and only a fresh press moves on - a
+button held from the fight does not skip it. The press is answered with
+the select's confirm sound, and the boss leaves the screen with it.
 
 Jaguarandi's screen comes straight after it falls, before the Player Data
 Report; Z-Gradt's after the credits, before the initials. The game then
@@ -84,16 +84,24 @@ unpatched game never reads it.
   in its select pose, as on its unlock screen, and Z-Gradt standing.
 - The ending plays for a boss: Jaguarandi fires its own weapon at the moon
   gate and Z-Gradt its own charge and laser, then the text and the button
-  wait (the staff roll's battle-damaged model is one the bosses do not
-  have).
-- Credits are autoskipped for Z-gradt and Jaguarandi because 
-  they do not have a battle damage model to use.
+  wait. The staff roll is skipped: its battle-damaged model is one the
+  bosses do not have.
 
 ### Limits
 
 - One player only, by design: the bosses are far stronger than the eight,
   so two-player and internet play keep the select to the eight for a fair
   fight, and nothing here runs there.
+- The bosses' weapons have no ammo: Z-Gradt's shots skip the game's
+  charge counting, so its three gauges stay full, and Jaguarandi's refill
+  faster than it can fire. Its super laser has no gauge, as no machine has
+  a fourth.
+- `bosses.bin` is written beside the game when a boss is unlocked. Where
+  the folder cannot be written, the unlock screen still shows but the
+  unlock is lost at exit.
+- Jaguarandi's model file, `RB_jag.bin`, is read when the select first
+  draws it. If the read fails it is drawn from whatever the model pool
+  holds there, until a fight loads it.
 
 ## How it works
 
@@ -130,8 +138,9 @@ The bosses' models are their fight models posed by the select's motions:
 Jaguarandi through Raiden's, with its head put back on, and Z-Gradt in its
 stance's first frame. Each file is read once into a block of its own
 (`sel_loadrb`), and the game's model slot points there only while the boss
-is drawn (`sel_slotsin`, `sel_slotsout`). Appended to the game's 8 MB
-model pool, they ran into the C runtime's heap after a full game.
+is drawn (`sel_slotsin`, `sel_slotsout`). They are not appended to the
+game's 8 MB model pool: after a full game that runs into the C runtime's
+heap.
 
 The portraits are `assets/portrait_jaguarandi.png` and
 `assets/portrait_z-gradt.png`, 48 by 64 and framed like the eight's,
@@ -145,12 +154,11 @@ them on entering the select, blank for a boss still locked.
 The row's portraits, the marks and the frame are shifted per unlock level
 (`selshift`); the frame sprite reads its x from two doubles in the game's
 read-only data (`BS_FRX`), whose section the patcher makes writable so the
-select can set them. The countdown's start is
-`seltime`.
+select can set them. The countdown's start is `seltime`.
 
 ### Colours on the select
 
-How the game picks a palette, learned the hard way:
+How the game picks a palette:
 
 - Palette RAM (`0x1cb5500`) is three planes of 32 rows of 256 entries. A
   polygon names its row per plane through its colour word in the mesh
@@ -159,8 +167,8 @@ How the game picks a palette, learned the hard way:
   word from the mesh later in the frame, not when the polygon is queued.
 - The bosses' meshes name the greys of rows 1 and 3 (5 and 7 as the CPU's)
   - the rows the select fills with the machine under the cursor and its
-  neighbours (1 to 11, as the cursor moves), which is why a boss used to be
-  drawn black or in someone else's colours.
+  neighbours (1 to 11, as the cursor moves), so a boss drawn through them
+  takes the colours of whatever the cursor is on, or none.
 - The odd rows from 13 are set once at boot: 13, 17 and 19 are the launch
   thrust; the select rewrites 21 for a frame on each move and 23 as it
   opens; the launch water reads 21 and 25; the fight re-animates 21 to 29.
@@ -207,9 +215,10 @@ with the texture bank the fights had loaded reloaded.
 
 ### Elsewhere in the game
 
-- **Palettes** - the loaders (`0x4c2026`, `0x4f358b`) send ids above 7 to
-  a fixed table; for a player's boss they give it the colour pair it was
-  given on the select instead, from the side its player's machine uses.
+- **Palettes** - the loader (`0x4f358b`; `0x4c2026` is the other copy's)
+  sends ids above 7 to a fixed table; for a player's boss it gives it the
+  colour pair it was given on the select instead, from the side its
+  player's machine uses.
 - **PLAYER DATA** - the report's turntable reads per-machine tables only
   the eight have rows in. A boss is drawn by its fight object, or its
   select pose for Jaguarandi, from a standing copy taken at the start of
@@ -234,6 +243,10 @@ with the texture bank the fights had loaded reloaded.
 
 - `bosses.bin` beside the game: delete it to start locked, or write the
   dword 1 or 2 to start part or fully unlocked.
-- `python tools/selftest.py v_on.exe` checks every site and 437
+- `python3 tools/selftest.py v_on.exe` checks every site and 437
   combinations of patches, including the two boss boxes with and without
-  each other.
+  each other; `python3 tools/portraittest.py` on the game folder reads the
+  portraits back out of `escrgame.bin`. `tools/check.py` runs both.
+- The per-frame tick runs from the loop's idle call, which the loop skips
+  on a frame with F10, F3 or Alt in the message queue; the unlock screen's
+  state is cleared only by its own button press.

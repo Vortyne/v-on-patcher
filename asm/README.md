@@ -186,19 +186,19 @@ resolution blob on the retail file only.
 
 ## Where the blobs go
 
-Every blob but two is in the annex: a section, `.vojp`, that the patcher
+Every blob but three is in the annex: a section, `.vojp`, that the patcher
 appends before any patch is written, executable, and fills through the
 site table like any other site. Where it lands is fixed by the file's own
 headers, so its addresses are known when the patcher loads and nothing
-is relinked at apply time; `.voxt` and `.vocd`, the sections two patches
-append at apply time, land after it. Every entry reads its length from the
+is relinked at apply time; `.vobs`, `.voxt` and `.vocd`, the sections
+three patches append at apply time, land after it. Every entry reads its length from the
 blob, so a routine can change size with a rebuild and nothing else.
 
-The two exceptions are places the game itself reaches: the F7 device
+Two of the exceptions are places the game itself reaches: the F7 device
 list, which `padtables.py` writes into the game's own run in `.data`, and
 `levers.asm`, written straight after `padxinput.asm` because the epilogue
 it replaces falls through into it. Those are the `caves` table of each
-`Build`.
+`Build`. The third is `bosses.asm`, in a section of its own (below).
 
 Nothing goes in a run of zeros in `.rdata`. A run there is never known to
 be free: a pointer just before it means the tail of a structure or the

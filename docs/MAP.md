@@ -188,4 +188,4 @@ within 16 KB of each other.
 | sound | 5 | `0x458d89`, `0x5719c9`, `0x58a146–0x58a152`, `0x6bcc60` |
 | movie | 10 | the PE header, `0x4d6cc8`, `0x54e842`, `0x590825`, `0x5c64e7`, `0x6c8878`, the annex |
 | credits | 5 | `0x5c6500`, `.rdata 0x5fdac8`, `0x6bcd54`, the annex |
-| bosses | 146 | 19 runs from `0x404db7` to `0x5e0254`, `.rdata 0x5ff238`, `.data 0x63c1d4–0x63e084` (the bosses' weapon names), plus its section |
+| bosses | 146 | 19 runs from `0x404db7` to `0x5e0254`, `.rdata 0x5ff238` and `0x63c1d4–0x63e084` (the bosses' weapon names), plus its section |

@@ -32,6 +32,7 @@ nothing: the phrase is stored as 126 tile indices, and the letterforms are
 | `HOLD TO SKIP` | ending credits | in the patch | GDI. Not the game's - it is carried in `overlay.asm` and drawn at 320, 440 of the picture, computed from the mode size, halved with everything else in low resolution |
 | `Bindings - %dP side` | bind page title | `0x26c88c` | C string the page's `SetWindowTextA` formats; replaces the stock title so both sides are told apart |
 | `1P side` → `Actions` | bind page label | `0x60b34e` | UTF-16, inside the dialog template in `.rsrc`. Baked-in text the stock game showed on the 2P pass too; the replacement must stay seven characters |
+| `R-WEAPON`, `L-WEAPON`, `RL-WEAPON` → `AUTOBAZOOKA`, `V.MISSILE`, `SPLITLASER` (Jaguarandi) and `T.RING BEAM`, `E.BARRAGE`, `MINEFIELD` (Z-Gradt) | the HUD's weapon gauges | `0x63c1d4`, `0x63c8a4`, `0x63d9b4`, `0x63e084` | tile font, three 16-byte slots in each boss's model header, one header per copy of the game. **Playable bosses** writes them; the select's weapon lines for the bosses are the patch's own strings in `bosses.asm` |
 
 The tile font table around `0x285df0` also holds `INSERT COIN(S)`,
 `TO BE CONTINUED ...`, `MOVE  FORWARD`, `DASH  BUTTON`, the mech names and
@@ -103,6 +104,7 @@ Not text. 42x3 cells of 8x8 pixels, 16bpp RGB565.
 | Tile indices | `v_on.exe` `0x269b60`, 126 entries of 16 bits |
 | Artwork | the title artwork, `0x21c000`, 109 tiles of 128 bytes |
 | Spare tiles | the same file, tile 24845, a run of 115 empty ones - 116 in `escrgame.bin`, but the 116th is a logo tile in `jscrgame.bin` |
+| Boss portraits | the same file, tiles `0x1730` and `0x17b0`, 48 each: the empty 80 after two of the eight's select portraits. **Playable bosses** writes them from `assets/portrait_*.png` (`tools/portraits.py`, `BOSS_ICON_TILES`) |
 
 The artwork is `escrgame.bin` in the English retail and OEM builds and
 `jscrgame.bin` in both Japanese builds; the tiles this touches are in
