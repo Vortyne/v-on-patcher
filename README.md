@@ -797,7 +797,9 @@ not the game, not the bytes quoted from it, and not the letterforms traced
 from its artwork.
 
 The logo and icon are the work of SirRockEmSockEm, who also took the
-in-game shots above.
+in-game shots above. **Playable bosses** - the two bosses as player
+machines, their select, unlock and portraits - is the work of
+[Vortyne](https://github.com/Vortyne).
 
 Bug reports and patches are welcome as issues and pull requests. For
 anything else - a disc image of a build the patcher does not know, or a

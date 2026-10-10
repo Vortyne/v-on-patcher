@@ -2761,6 +2761,7 @@ NAME = 'v-on-patcher'
 # and the line the patched game prints on its title screen.
 LABEL = 'V-On Patcher'
 LOGO_CREDIT = 'Logo by SirRockEmSockEm'
+BOSSES_CREDIT = 'Playable bosses by Vortyne'
 REPO_URL = 'https://github.com/pairomaniac/v-on-patcher'
 
 EXE_SIZE = 6650880
@@ -16660,7 +16661,8 @@ FEATURES = [
      '\t20 seconds longer.\n'
      'Colour\tWith Machine Color Select on, up and down on a boss\n'
      '\tgive it any of the colours the eight have.\n'
-     'Builds\tEnglish retail and USA OEM.', [
+     'Builds\tEnglish retail and USA OEM.\n'
+     'By\tVortyne.', [
          # The select: the bosses' palettes and Z-Gradt's lift, from the
          # loop's idle call, both sites.
          #
@@ -21383,10 +21385,11 @@ def run_tk():
                 cursor='hand2'))
             link.pack(anchor='w', pady=(1, 0))
             link.bind('<Button-1>', lambda _e: webbrowser.open(REPO_URL))
-            self._static_label(ttk.Label(
-                parent, text=LOGO_CREDIT, style='Card.TLabel',
-                foreground=self.dim, font=self.small)).pack(
-                    anchor='w', pady=(1, 0))
+            for credit in (LOGO_CREDIT, BOSSES_CREDIT):
+                self._static_label(ttk.Label(
+                    parent, text=credit, style='Card.TLabel',
+                    foreground=self.dim, font=self.small)).pack(
+                        anchor='w', pady=(1, 0))
             # A ttk separator takes the theme's colour, which is not one of
             # ours; a one pixel frame in the palette's line colour is.
             tk.Frame(parent, height=1, background=PALETTE['line'],
