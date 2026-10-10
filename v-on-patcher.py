@@ -21607,6 +21607,7 @@ def run_tk():
                         and not feature_supported(key, self.core.build):
                     self.vars[key].set(False)
                     self.checks[key].state(['disabled'])
+            self._sync_needs()
             self._chose = bool(ok)
             self.apply_btn.state(['!disabled'] if ok else ['disabled'])
             self.restore_btn.state(
@@ -21626,8 +21627,24 @@ def run_tk():
             return sum(1 for key, var in self.vars.items()
                        if key in ESSENTIAL or var.get())
 
+        def _sync_needs(self):
+            """A box that needs another follows it: unticked and greyed
+            while the one it needs is off, so what is ticked is what will
+            be written."""
+            for key, need in NEEDS.items():
+                if key not in self.checks or need not in self.checks:
+                    continue
+                on = (self.vars[need].get()
+                      and 'disabled' not in self.checks[need].state())
+                if on:
+                    self.checks[key].state(['!disabled'])
+                else:
+                    self.vars[key].set(False)
+                    self.checks[key].state(['disabled'])
+
         def _retally(self, *_args):
             """Keep the count honest as boxes are ticked."""
+            self._sync_needs()
             if self.core.exe_path and not self.core.compare:
                 self._set_status(READY % (self.core.build.name,
                                           self._selected()), True)

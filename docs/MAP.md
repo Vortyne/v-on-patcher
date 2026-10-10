@@ -42,7 +42,7 @@ is stale, so the line numbers are current.
 | 17962–18814 | netplay setup, `SYNC_SITES`, cnc-ddraw, CD audio | `# --- netplay --------------` |
 | 18815–19336 | `Patcher`: reading a file, applying, restoring | `class Patcher:` |
 | 19337–19904 | the logo and icon (`tools/assets.py`), then the window strings | `# ASSETS BLOB BEGIN - tools/` |
-| 19905–21918 | the window (`run_tk`), the CLI, `main` | `def run_tk():` |
+| 19905–21935 | the window (`run_tk`), the CLI, `main` | `def run_tk():` |
 <!-- REGIONS END -->
 
 ## 3. `v_on.exe`
