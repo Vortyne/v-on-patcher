@@ -58,8 +58,6 @@ def main(gamedir):
     build = build_of(vp, exe_src)
     if build is None:
         return 'not found, or not a build with tables: %s' % exe_src
-    if not vp.feature_supported('bosses', build):
-        return 'the bosses patch is not ported to %s: nothing to read' % build.name
     art_name, _size, art_md5 = build.art
     art_src = os.path.join(gamedir, art_name)
     if not os.path.exists(art_src):

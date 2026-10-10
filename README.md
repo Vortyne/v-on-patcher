@@ -687,8 +687,8 @@ Four builds of the game exist, and all four patch:
 | Japanese original | 6,644,224 | `9764d946ffc8cee94788707c91753478` | patches |
 
 The USA, USA Alt and European discs all carry the same English retail
-`v_on.exe`, so any of them will do. Every patch but **Playable bosses**
-works on all four builds, and the window names the build it is looking at.
+`v_on.exe`, so any of them will do. Every patch works on all four builds,
+and the window names the build it is looking at.
 
 **[The Japanese original](https://redump.info/disc/133978)** is the 1997
 1.04J pressing, also found in the Sega PC Greatest Hits Vol. 3 bundle. Its

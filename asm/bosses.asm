@@ -93,6 +93,7 @@ extern BS_WALLA                 ; the floor's height, from a beam segment
 extern BS_SPDA                  ; Z-Gradt's beam's speed
 extern BS_SCANA                 ; the ending camera's slot scan, after its
 extern BS_FOUNDA                ; start, and where it takes a slot found
+extern BS_SCANBASE              ; what the scan adds to its start
 extern BS_ZTAB0                 ; Z-Gradt's tables, per side
 extern BS_ZTAB1
 extern BS_ZINITA                ; Z-Gradt's setup
@@ -205,7 +206,8 @@ extern BS_DRJA                  ; the stand overlay
 extern BS_DRSA
 extern BS_C2A                   ; mode 0xa: resume
 %include "frames.inc"           ; DR_FLAG: the deref's local; CAM_PTR: the
-                                ; live camera's; PAL_CPU: the palette
+                                ; live camera's; SCAN_SLOT: the ending
+                                ; camera's slot found; PAL_CPU: the palette
                                 ; events' side flag. A recompile moves them
 
 ; The ending
@@ -240,6 +242,7 @@ extern BS_TM4S
 extern BS_CLIP0A                ; the clip bank: 0 the pad's, 3 the AI's
 extern BS_CLIP3A
 extern BS_CLONEA                ; resume
+extern BS_CLONEFRAME            ; and the frame its prologue makes
 extern BS_BSSA                  ; Z-Gradt's AI state
 extern BS_TICKA                 ; its tick, resume
 
@@ -3350,13 +3353,15 @@ zbeam_off:
 ; its cannon, so for Z-Gradt the camera is given a slot of its own instead:
 ; a point leaving the cannon for the gate at ZBEAM_V a frame.
 ;
-; In place of `mov eax, [ebp-0x10]; add eax, 0x600`, the scan's start.
+; In place of `mov eax, [ebp-0x10]; add eax, 0x600`, the scan's start
+; (BS_SCANBASE: 0x5e0 in the rerelease), the slot it found going to the
+; frame's SCAN_SLOT.
 %macro ZBEAM 6                      ; label, the player, its id, the timer,
 %1:                                 ; the scan, the slot found
         cmp     dword [%3], ZGRADT
         je      %%z
         mov     eax, [ebp - 0x10]
-        add     eax, 0x600
+        add     eax, BS_SCANBASE
         jmp     %5
 %%z:    mov     eax, [%4]
         sub     eax, 2
@@ -3371,7 +3376,7 @@ zbeam_off:
         fstp    dword [zfake + 0x14]
         mov     eax, [%2 + 8]
         mov     [zfake + 0x10], eax
-        mov     dword [ebp - 0x1c], zfake
+        mov     dword [ebp + SCAN_SLOT], zfake
         jmp     %6
 %endmacro
 
@@ -3770,7 +3775,7 @@ zready_a:
 %1:
         push    ebp
         mov     ebp, esp
-        sub     esp, 0x44
+        sub     esp, BS_CLONEFRAME  ; 0x44, 0xc in the rerelease
         push    ebx
         push    esi
         push    edi

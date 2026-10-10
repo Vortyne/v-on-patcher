@@ -26,10 +26,10 @@ import sys
 # Everything ticked, per build: retail, the Japanese rerelease, the OEM,
 # the Japanese original.
 EXPECTED_ALL = {
-    'a464b0ff32d5bab499f265e45658504e': '9590140a8f203c28461f320977978cbd',
-    'd19320bdc3381a48228990907910a391': '0180355d2a61697dc661f5cad735837e',
-    '4c70f780a7f0d98d74be62304fb99021': '60ba5c06510a92c001add20624368566',
-    '9764d946ffc8cee94788707c91753478': '22992b0d31368a78064c431c04fe540c',
+    'a464b0ff32d5bab499f265e45658504e': '7253261edc977764cc4951312fd934fe',
+    'd19320bdc3381a48228990907910a391': 'c81b214d423792223c4c5bab990701d3',
+    '4c70f780a7f0d98d74be62304fb99021': 'cb1b871c28403661d4c92830db1ddfd2',
+    '9764d946ffc8cee94788707c91753478': '9e63042ed8102fe4bd3fe81eb7cdbbc4',
 }
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -89,9 +89,7 @@ def apply(vp, original, keys, build):
     buf, _applied, skipped = vp.apply_selected(bytearray(original),
                                                dict.fromkeys(keys, True),
                                                build)
-    # Skipped as it should be: a patch whose prerequisite is not ticked
-    # (one not ported to the build never gets this far: main() keeps it
-    # out of `keys`).
+    # Skipped as it should be: a patch whose prerequisite is not ticked.
     skipped = [(key, why) for key, why in skipped
                if key not in vp.NEEDS or vp.NEEDS[key] in keys]
     if skipped:
@@ -216,7 +214,7 @@ def main(path):
     if hits != 1:
         bad += 1
 
-    keys = [key for key in table if vp.feature_supported(key, build)]
+    keys = list(table)
     failures, tested = [], 0
     trials = [set(c) for r in (1, 2) for c in itertools.combinations(keys, r)]
     random.seed(1)
