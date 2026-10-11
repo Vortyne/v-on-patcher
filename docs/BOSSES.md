@@ -62,8 +62,8 @@ unpatched game never reads it.
   against Z-Gradt on the last one.
 - The KO replay and the win and lose shots pull back to frame a boss's
   size, the replay's never downwards; on a small arena the win shots that
-  need floor under the camera fall back to the usual distance rather than
-  search for ever.
+  need floor under the camera try a turn round at the boss's distance,
+  then four turns each a quarter nearer the usual, then the usual.
 - The bosses' chase camera is the game's own - its modes, its glide
   between them, its pan as the opponent jumps - stood further out: two and
   a half times as far for Z-Gradt, half as far again for Jaguarandi.
@@ -204,7 +204,10 @@ game's again for the water.
 The widescreen hangar shades a machine by how far right of the camera it
 is, black past 28.43 - a machine and a half at the eight's spacing.
 `selfade` recomputes that shade for a boss, counting each gap between it
-and the camera as one of the eight's 20. The camera's place is read where
+and the camera as one of the eight's 20, and `selcull_a` draws a boss out
+to where that count reaches 28.43 - 38.43 for Jaguarandi, 110.65 for
+Z-Gradt - so each comes into view black, as the eight do. The camera's
+place is read where
 the hangar reads it (`BS_SELCAM`): 0xac8 past the scene's objects on
 three builds, 0xc58 on the Japanese rerelease.
 

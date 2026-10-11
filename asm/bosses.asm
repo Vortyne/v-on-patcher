@@ -990,15 +990,33 @@ sel_loadzmot:
 .out:   ret
 
 ; The hangar draws a machine only within 28.43 ahead of the camera along
-; the row; Z-Gradt, far past Jaguarandi and so large, is in sight from
-; Jaguarandi's place too (drawn black: its palettes are not in). In place
-; of `fadd qword [28.43]`, a nop after; [ebp+0xc] the scene object.
-SEL_ZOBJ    equ SEL_EIGHT + 1       ; Z-Gradt's scene object
+; the row (BS_SELAHEAD), and the widescreen hangar fades one to black
+; there, so a machine comes into the drawn stretch unseen. A boss is
+; further along than the eight's 20 apart, and selfade shades it in the
+; eight's measure, each gap to the camera counted as 20: so the stretch
+; reaches to where that measure comes to 28.43 - Jaguarandi's gap and
+; what is left of the 28.43 past 20, Z-Gradt's first gap and the
+; remainder in its second gap's units - and a boss comes in black too.
+; In place of `fadd qword [28.43]`, a nop after; [ebp+0xc] the scene
+; object, st0 the camera's place.
+SEL_JOBJ    equ SEL_EIGHT           ; Jaguarandi's scene object, and
+SEL_ZOBJ    equ SEL_EIGHT + 1       ; Z-Gradt's
 selcull_a:
         fadd    qword [BS_SELAHEAD]
+        cmp     dword [ebp + 0xc], SEL_JOBJ
+        je      .jag
         cmp     dword [ebp + 0xc], SEL_ZOBJ
         jne     .out
-        fadd    dword [sel_zsight]
+        fld     qword [BS_SELAHEAD]
+        fsub    dword [sel_twenty]  ; the measure left past the first gap,
+        fmul    dword [sel_step]    ; in the second gap's units
+        fdiv    dword [sel_twenty]
+        fadd    dword [sel_zgap]    ; the way to it in all,
+        fsub    qword [BS_SELAHEAD] ; past the eight's
+        faddp   st1, st0
+        ret
+.jag:   fadd    dword [sel_step]    ; its gap counted as 20
+        fsub    dword [sel_twenty]
 .out:   ret
 
 ; The launch's sled, under the machine taken as it goes, is for the eight
@@ -4292,17 +4310,45 @@ zswap:
 
 ; Three of the shots look for a spot at the distance round the subject
 ; with floor under it, turning till they find one; at a boss's distance a
-; small arena has none, and they would turn for ever. So there the
-; distance is the boss's for a turn round (WIN_TRIES, the angle 0x80
-; back a try), and the game's after it. win_tries is the tries this frame.
+; small arena has none, and they would turn for ever. So the distance is
+; the boss's for a turn round (WIN_TRIES, the angle 0x80 back a try), then
+; each turn round after it a step nearer the game's own, WIN_STEPS steps
+; in all, and the game's after those. win_tries is the tries this frame.
 WIN_TRIES   equ 0x10000 / 0x80
+WIN_SHIFT   equ 9                   ; the tries to the turns round
+%if WIN_TRIES != (1 << WIN_SHIFT)
+%error WIN_SHIFT is not WIN_TRIES's
+%endif
+WIN_STEPS   equ 4
 %macro WINTRY 2                     ; label, the distance
 %1:
         inc     dword [win_tries]
-        cmp     dword [win_tries], WIN_TRIES
-        ja      %%plain
-        WINSCALE
+        push    eax
+        mov     eax, [win_tries]
+        shr     eax, WIN_SHIFT      ; the turns round so far
+        cmp     eax, WIN_STEPS
+        jae     %%plain
+        mov     [win_turn], eax
+        mov     eax, [ebp + 8]
+        mov     eax, [eax + 0x64]
+        cmp     eax, ZGRADT
+        je      %%z
+        cmp     eax, JAG
+        jne     %%plain
+        fld     dword [win_jag]
+        jmp     %%go
+%%z:    fld     dword [win_z]
+%%go:   fld1
+        fsubp   st1, st0            ; the factor's extra over one,
+        fild    dword [win_turn]
+        fsubr   dword [win_steps]   ; by the turns left
+        fdiv    dword [win_steps]   ; of WIN_STEPS
+        fmulp   st1, st0
+        fld1
+        faddp   st1, st0            ; one and that: the factor this turn
+        fmulp   st1, st0
 %%plain:
+        pop     eax
         fstp    dword [%2]
         ret
 %endmacro
@@ -4442,6 +4488,8 @@ rm_z:   dd      0.45, 10.0, -5.0    ; height its origin sits at, and how
 rrm_jag: dd     0.85, 7.0, 4.0      ; the player's Jaguarandi, as the
                                     ; unlock poses it
 win_tries: dd   0
+win_turn: dd    0                   ; the turn round a try is in
+win_steps: dd   4.0                 ; WIN_STEPS
 zr_wait: dd     0                   ; frames GET READY has been held
 zl_prev: dd     0                   ; the player's levers last frame
 zl_on:  dd      0                   ; turning to face the CPU
@@ -4519,7 +4567,6 @@ sel_four: dd    4.0
 sel_zbob: dd    0.03                ; its head's bounce up and down
 sel_zturn: dd   9.5873799e-5        ; an angle unit, in radians (pi / 0x8000)
 sel_zprevz: dd  0.0                 ; where it was last frame
-sel_zsight: dd  80.0                ; Z-Gradt drawn further ahead
 sel_zflamey: dd  -15.0              ; its thruster's flame, from its root,
 sel_zflamerx: dd -10560             ; turned out of its underside (the
                                     ; jets lie 32 degrees below the mesh's z),
