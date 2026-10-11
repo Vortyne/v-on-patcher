@@ -61,8 +61,8 @@ unpatched game never reads it.
 - Both bosses play as player machines, every stage, including Z-Gradt
   against Z-Gradt on the last one.
 - The KO replay and the win and lose shots pull back to frame a boss's
-  size, the replay's never downwards, and Jaguarandi's win shots start no
-  nearer than 60 units (the game's pull back from 15, inside its legs); on a
+  size, the replay's never downwards, and Jaguarandi's win shots close in
+  no nearer than 100 units (the game's end at 15, inside its legs); on a
   small arena the win shots that
   need floor under the camera try a turn round at the boss's distance,
   then four turns each a quarter nearer the usual, then the usual.

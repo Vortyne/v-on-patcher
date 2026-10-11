@@ -4278,7 +4278,7 @@ zswap:
 ; aims from the eye and that distance. Scaling the distance where it is
 ; stored moves the eye back with the aim kept. A boss's is the game's
 ; times its factor (win_jag, win_z), and at least its minimum (win_jmin,
-; win_zmin): the shots that pull back start as near as 15, inside
+; win_zmin): the shots that close in end as near as 15, inside
 ; Jaguarandi's legs however scaled. The floor search's later turns keep
 ; a share of the factor's extra and of the minimum ([win_share], 1
 ; otherwise). [ebp+8] is the subject; st0 the distance, in and out.
@@ -4513,7 +4513,7 @@ zfl_wall: dd    1000.0              ; the arena's floor at a wall, and over
 zfl_step: dd    4.0                 ; the rise Z-Gradt's moves take, its own
 win_z:  dd      4.0                 ; win and lose: the subject's distance
 win_jag: dd     2.0                 ; times this
-win_jmin: dd    60.0                ; and at least this: Jaguarandi's,
+win_jmin: dd    100.0               ; and at least this: Jaguarandi's,
 win_zmin: dd    0.0                 ; Z-Gradt's (none)
 win_share: dd   1.0                 ; the floor search's share of the extra
 win_35: dd      35.0                ; the two a shot sets as constants
