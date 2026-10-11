@@ -79,6 +79,10 @@ unpatched game never reads it.
 - Z-Gradt has no jump. The jump - both levers out, or the jump key - turns
   it to face the opponent instead, a half turn in 64 frames, the
   camera with it; not while its super laser is out.
+- Z-Gradt moves on the arena it is on: it stops at the arena's edge and
+  at the walls and obstacles the eight stop at, and its height follows
+  the ground. On the moon gate it keeps the game's own bounds, a square
+  280 units each way from the middle.
 - Z-Gradt's laser turns the right Z-Gradt gold when both are on the field,
   and a Z-Gradt that falls darkens alone: the player's keeps the colours it
   was given.
@@ -239,6 +243,13 @@ with the texture bank the fights had loaded reloaded.
   it lands (`zready_a`). Its facing goes to the chase camera each frame,
   and the jump turns the facing to the CPU at the CPU's own aim
   (`zlock`); Z-Gradt's own code turns its model with it.
+- **Z-Gradt's floor** - its moves ask `zfloor_a` where the ground is at
+  the place they go: on the moon gate the game's own box (`BS_ZBOXA`),
+  elsewhere the arena's floor as the eight read it (`BS_FLOORA`). A wall
+  comes back as the query gives it; a rise over 4 units above the floor
+  under it comes back as a wall facing the way it moves, and a smaller
+  one as its height now plus the rise, so it never sticks on a floor it
+  landed below.
 - **Z-Gradt's death** - it darkens through palette events 0x401 to 0x43f,
   which the handler takes to be the CPU's; the player's are passed over
   (`zdark_a`, `zfade_a`).

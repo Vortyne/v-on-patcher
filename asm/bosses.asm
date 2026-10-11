@@ -237,6 +237,8 @@ extern BS_ZMODA                 ; the model header Z-Gradt's code reads
 extern BS_ZTIMA                 ; the fly-in timer
 extern BS_RCOUNTA                ; A's frames left in a state
 extern BS_ARENA                  ; the arena loaded, 0 to 9
+extern BS_ZBOXA                 ; Z-Gradt's own floor query, the moon
+extern BS_FLOORA                ; gate's box; and the arena's, the eight's
 extern BS_TM2                   ; two timer locks: resume and skip each
 extern BS_TM2S
 extern BS_TM4
@@ -281,6 +283,7 @@ SELECT_HI   equ 0x30
 ATTRACT_LO  equ 0x10                ; scene: title and attract, the demo
 ATTRACT_HI  equ 0x20                ; included
 LAST_STAGE  equ 9
+ARENA_MOON  equ 6                   ; the moon gate, the last stage's arena
 READY_GO    equ 5                   ; frames after GET READY before the
                                     ; player's Z-Gradt moves
 MODEL_COPY  equ 0x800
@@ -3769,6 +3772,86 @@ zready_a:
         cmp     dword [BS_RCOUNTA], 0
         ret
 
+; Z-Gradt's moves ask its own floor query where the ground is at the place
+; it moves to: a box 280 each way from the arena's middle, the moon gate's
+; size, flat inside, a wall of 100000 outside with the wall's facing. On
+; every other arena the player's Z-Gradt asks the arena's own floor
+; instead, the query the eight walk by (BS_FLOORA): a wall where it says
+; one is, its facing as it writes it; otherwise the floor there against
+; the floor under it now, a rise over zfl_step a wall facing the way it
+; moves, a smaller one taken, its height following the ground. In place
+; of the three calls to its own query; cdecl, (the object, x, z, the
+; facing's word), the height in st0.
+zfloor_a:
+        cmp     dword [BS_ARENA], ARENA_MOON
+        je      BS_ZBOXA            ; its own box there, the args as they are
+        push    ebp
+        mov     ebp, esp
+        sub     esp, 12             ; the floor there, the floor here, a facing
+        push    dword [ebp + 0x14]
+        push    dword [ebp + 0x10]
+        push    dword [ebp + 0xc]
+        push    dword [ebp + 8]
+        call    BS_FLOORA
+        add     esp, 16
+        fst     dword [ebp - 4]
+        fcomp   dword [zfl_wall]
+        fnstsw  ax
+        test    ah, 1               ; under a wall's height: floor
+        jz      .wall
+        mov     eax, [ebp + 8]
+        lea     ecx, [ebp - 12]
+        push    ecx
+        push    dword [eax + 0x10]
+        push    dword [eax + 8]
+        push    eax
+        call    BS_FLOORA
+        add     esp, 16
+        fst     dword [ebp - 8]
+        fcomp   dword [zfl_wall]
+        fnstsw  ax
+        test    ah, 1
+        jz      .inside             ; in a wall now: out of it as it likes
+        fld     dword [ebp - 4]
+        fsub    dword [ebp - 8]     ; the rise
+        fcom    dword [zfl_step]
+        fnstsw  ax
+        test    ah, 0x41
+        jnz     .rise               ; a step it takes
+        mov     eax, [ebp + 8]      ; too high: a wall facing the way it moves
+        mov     ecx, [eax + 0x1c8]  ; along x
+        mov     edx, [eax + 0x1cc]  ; along z
+        mov     eax, ecx
+        and     eax, 0x7fffffff
+        push    edx
+        and     edx, 0x7fffffff
+        cmp     eax, edx
+        pop     edx
+        mov     eax, 0x4000         ; the wall past +x, as the box has it
+        jb      .alongz
+        test    ecx, ecx
+        jns     .facing
+        mov     eax, 0xc000         ; past -x
+        jmp     .facing
+.alongz:
+        xor     eax, eax            ; past -z
+        test    edx, edx
+        js      .facing
+        mov     eax, 0x8000         ; past +z
+.facing:
+        mov     ecx, [ebp + 0x14]
+        mov     [ecx], ax
+.rise:  mov     eax, [ebp + 8]
+        fadd    dword [eax + 0xc]   ; its height now, the rise on it
+        jmp     .out
+.inside:
+        mov     eax, [ebp + 8]
+        fld     dword [eax + 0xc]
+        jmp     .out
+.wall:  fld     dword [ebp - 4]
+.out:   leave
+        ret
+
         TIMER   tm_2, BS_ZTIMA, BS_TM2, BS_TM2S
         TIMER   tm_4, BS_ZTIMA, BS_TM4, BS_TM4S
 
@@ -4367,6 +4450,8 @@ zf_start: dd    100, 199, 100, 60, 100, 199, 100, 100, 100, 199 ; the
                                     ; player's Z-Gradt's fly-in, by arena:
                                     ; Air, Fact, Water, Fore, Inka, Dock,
                                     ; Moon, Tro, Fld, Core
+zfl_wall: dd    1000.0              ; the arena's floor at a wall, and over
+zfl_step: dd    4.0                 ; the rise Z-Gradt's moves take, its own
 win_z:  dd      4.0                 ; win and lose: the subject's distance
 win_jag: dd     2.0                 ; times this
 win_35: dd      35.0                ; the two a shot sets as constants
