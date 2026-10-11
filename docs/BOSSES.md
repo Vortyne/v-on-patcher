@@ -200,7 +200,9 @@ game's again for the water.
 The widescreen hangar shades a machine by how far right of the camera it
 is, black past 28.43 - a machine and a half at the eight's spacing.
 `selfade` recomputes that shade for a boss, counting each gap between it
-and the camera as one of the eight's 20.
+and the camera as one of the eight's 20. The camera's place is read where
+the hangar reads it (`BS_SELCAM`): 0xac8 past the scene's objects on
+three builds, 0xc58 on the Japanese rerelease.
 
 ### Unlocking
 

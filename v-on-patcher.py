@@ -3169,6 +3169,7 @@ RETAIL = Build('English retail', 'retail', ORIGINAL_MD5, EXE_SIZE,
     'BS_PALLOADA': 0x004f358b,
     'BS_PALRAMA': 0x01cb5500,
     'BS_SELOBJ': 0x0345b290,
+    'BS_SELCAM': 0x0345bd58,       # the scene camera's place
     'BS_FRX': 0x006220d8,          # the portrait frame's x, in .rdata
     'BS_HSITE': 0x0059e4ea,        # the hangar's call of the model, and
     'BS_HDOFF': UI_HANGAR_DRAW,    # the widescreen hangar_draw in its blob
@@ -3538,6 +3539,7 @@ JPRE = Build('Japanese rerelease', 'jpre', JPRE_MD5, JPRE_SIZE, 0x345107fa,
     'BS_PALLOADA': 0x004f05db,
     'BS_PALRAMA': 0x01b13260,
     'BS_SELOBJ': 0x03455d50,
+    'BS_SELCAM': 0x034569a8,
     'BS_FRX': 0x0061ce60,
     'BS_HSITE': 0x005992ea,
     'BS_HDOFF': 0x0000176d,
@@ -3898,6 +3900,7 @@ OEM = Build('USA OEM', 'oem', OEM_MD5, OEM_SIZE, 0x3317246a, sections=(
     'BS_PALLOADA': 0x004f342b,
     'BS_PALRAMA': 0x01cb5490,
     'BS_SELOBJ': 0x0345b220,
+    'BS_SELCAM': 0x0345bce8,
     'BS_FRX': 0x006220c8,
     'BS_HSITE': 0x0059dfba,
     'BS_HDOFF': UI_HANGAR_DRAW,
@@ -4259,6 +4262,7 @@ JP = Build('Japanese original', 'jp', JP_MD5, JP_SIZE,
     'BS_PALLOADA': 0x004f2e1b,
     'BS_PALRAMA': 0x01cb4020,
     'BS_SELOBJ': 0x03459db0,
+    'BS_SELCAM': 0x0345a878,
     'BS_FRX': 0x00620e50,
     'BS_HSITE': 0x0059d38a,
     'BS_HDOFF': 0x0000176d,
@@ -6470,7 +6474,7 @@ BLOBS = {
         'b9020000008d34818d34b5000000008d1c128b06ff349857e8fcffffff83c408'
         '8b46045fff74980457e8fcffffff83c408c3608b0d010000008d890500000081'
         'f9000000000f84a400000081e9000000008b54242429ca81fa001c00000f838c'
-        '000000be1434000083f8097505be1c3400008b45086bc054d980c80a00008b45'
+        '000000be1434000083f8097505be1c3400008b45086bc054d980000000008b45'
         '0c6bc054d8a838000000d9ee8b1685d2741fd902dbf2730fdceaddd8d805bc33'
         '000083c604ebe5defad9c9d80dbc330000dec1d82d28340000d80d2c340000d9'
         'e8dff1761ed90530340000dbf17204ddd9eb02ddd8d80d34340000db99641e00'
@@ -14429,7 +14433,7 @@ BLOBS = {
         (0xe4d, 'abs', 'BS_HDOFF', 0),
         (0xe64, 'abs', '.', 13332),
         (0xe6e, 'abs', '.', 13340),
-        (0xe7a, 'abs', 'BS_SELOBJ', 2760),
+        (0xe7a, 'abs', 'BS_SELCAM', 0),
         (0xe86, 'abs', 'BS_SELOBJ', 56),
         (0xe9e, 'abs', '.', 13244),
         (0xead, 'abs', '.', 13244),

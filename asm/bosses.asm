@@ -145,6 +145,8 @@ extern BS_PALRAMA               ; and A's palettes
 extern BS_POLYCOL               ; the polygon being queued's light
 extern BS_COLTAB                ; the polygons' colours, a row a plane
 extern BS_SELOBJ                ; the scene's objects
+extern BS_SELCAM                ; the scene camera's place, as the hangar
+                                ; reads it (0x345bd58)
 extern BS_HSITE                 ; the hangar's draw of a machine, and
 extern BS_HDOFF                 ; where the widescreen one is in its blob
 extern BS_MESHA                 ; a part's meshes (the three, 0)
@@ -1507,7 +1509,6 @@ selbosspal:
 ; return in its blob).
 SEL_HDIM    equ 0x1e64              ; ui.asm's D_DIM, from its blob's start
 SEL_UISIZE  equ 0x1c00              ; its code
-SEL_CAMZ    equ 0xac8               ; the camera's place, from the objects
 selfade:
         pushad
         mov     ecx, [BS_HSITE + 1] ; the hangar's call: the widescreen's?
@@ -1525,7 +1526,7 @@ selfade:
         mov     esi, sel_fz
 .go:    mov     eax, [ebp + 8]
         imul    eax, eax, SEL_OBJ
-        fld     dword [eax + BS_SELOBJ + SEL_CAMZ]
+        fld     dword [eax + BS_SELCAM]
         mov     eax, [ebp + 0xc]
         imul    eax, eax, SEL_OBJ
         fsubr   dword [eax + BS_SELOBJ + SEL_OBJZ] ; how far right
