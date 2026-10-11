@@ -4276,19 +4276,43 @@ zswap:
 ; The win camera (0x50ed51, 0x599fd1) runs one of eight shots, each of
 ; which sets a distance to its subject, places the eye that far out, and
 ; aims from the eye and that distance. Scaling the distance where it is
-; stored moves the eye back with the aim kept. [ebp+8] is the subject.
-%macro WINSCALE 0
+; stored moves the eye back with the aim kept. A boss's is the game's
+; times its factor (win_jag, win_z), and at least its minimum (win_jmin,
+; win_zmin): the shots that pull back start as near as 15, inside
+; Jaguarandi's legs however scaled. The floor search's later turns keep
+; a share of the factor's extra and of the minimum ([win_share], 1
+; otherwise). [ebp+8] is the subject; st0 the distance, in and out.
+winfactor:
         push    eax
         mov     eax, [ebp + 8]
         mov     eax, [eax + 0x64]
         cmp     eax, ZGRADT
-        je      %%z
+        je      .z
         cmp     eax, JAG
-        jne     %%out
-        fmul    dword [win_jag]
-        jmp     %%out
-%%z:    fmul    dword [win_z]
-%%out:  pop     eax
+        jne     .out
+        fld     dword [win_jag]
+        fld     dword [win_jmin]
+        jmp     .go
+.z:     fld     dword [win_z]
+        fld     dword [win_zmin]
+.go:    fmul    dword [win_share]   ; the least this turn
+        fxch    st1
+        fld1
+        fsubp   st1, st0            ; the factor's extra over one,
+        fmul    dword [win_share]   ; this turn's share of it
+        fld1
+        faddp   st1, st0
+        fmulp   st2, st0            ; the distance by it
+        fcomi   st0, st1            ; the least, or the distance
+        jbe     .drop
+        fxch    st1
+.drop:  fstp    st0
+.out:   pop     eax
+        ret
+
+%macro WINSCALE 0
+        mov     dword [win_share], 0x3f800000 ; 1.0
+        call    winfactor
 %endmacro
 
 ; In place of `fstp dword [distance]`, a nop after the call.
@@ -4329,24 +4353,11 @@ WIN_STEPS   equ 4
         cmp     eax, WIN_STEPS
         jae     %%plain
         mov     [win_turn], eax
-        mov     eax, [ebp + 8]
-        mov     eax, [eax + 0x64]
-        cmp     eax, ZGRADT
-        je      %%z
-        cmp     eax, JAG
-        jne     %%plain
-        fld     dword [win_jag]
-        jmp     %%go
-%%z:    fld     dword [win_z]
-%%go:   fld1
-        fsubp   st1, st0            ; the factor's extra over one,
         fild    dword [win_turn]
-        fsubr   dword [win_steps]   ; by the turns left
+        fsubr   dword [win_steps]   ; the turns left
         fdiv    dword [win_steps]   ; of WIN_STEPS
-        fmulp   st1, st0
-        fld1
-        faddp   st1, st0            ; one and that: the factor this turn
-        fmulp   st1, st0
+        fstp    dword [win_share]
+        call    winfactor
 %%plain:
         pop     eax
         fstp    dword [%2]
@@ -4502,6 +4513,9 @@ zfl_wall: dd    1000.0              ; the arena's floor at a wall, and over
 zfl_step: dd    4.0                 ; the rise Z-Gradt's moves take, its own
 win_z:  dd      4.0                 ; win and lose: the subject's distance
 win_jag: dd     2.0                 ; times this
+win_jmin: dd    60.0                ; and at least this: Jaguarandi's,
+win_zmin: dd    0.0                 ; Z-Gradt's (none)
+win_share: dd   1.0                 ; the floor search's share of the extra
 win_35: dd      35.0                ; the two a shot sets as constants
 win_30: dd      30.0
 rep_z:  dd      120.0               ; the replay: how far further back
