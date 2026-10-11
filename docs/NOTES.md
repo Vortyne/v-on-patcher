@@ -765,7 +765,10 @@ the select's row and its tables (eight long, made ten), the palette
 loaders (ids above 7 sent to a fixed table), the report's turntable, the
 round's animation loads, the ending, the win and replay cameras, and
 Z-Gradt against Z-Gradt on the last stage, where both share one model
-header and one block of AI state and the player's gets a copy of each. A
+header and one block of AI state and the player's gets a copy of each
+(the state is a run of globals from `BS_BSSA`, `BS_AIDW` dwords long, the
+seven the patch sets at the build's own offsets, `BS_AI*`: the rerelease
+lays them out apart from the other three). A
 one-player game runs on player 1's copy of the fight machine only (the
 other's tick, `0x40f528`, is called from the loop's two-player branch
 alone), so every hook is that copy's. Whether the player is a boss is one

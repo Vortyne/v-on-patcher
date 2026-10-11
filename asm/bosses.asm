@@ -245,7 +245,15 @@ extern BS_CLIP0A                ; the clip bank: 0 the pad's, 3 the AI's
 extern BS_CLIP3A
 extern BS_CLONEA                ; resume
 extern BS_CLONEFRAME            ; and the frame its prologue makes
-extern BS_BSSA                  ; Z-Gradt's AI state
+extern BS_BSSA                  ; Z-Gradt's AI state: its globals' first,
+extern BS_AIDW                  ; their length in dwords, and seven of
+extern BS_AI1C                  ; them from the first - the build's own,
+extern BS_AITIMER               ; the rerelease laying them out apart
+extern BS_AILASER               ; (retail's +0x1c, the fly-in timer at
+extern BS_AITAB                 ; +0x1b8, the laser's state at +0x1c4,
+extern BS_AITAB2                ; the side's four tables at +0x1bc,
+extern BS_AITAB3                ; +0x1c0, +0x4 and +0xd0)
+extern BS_AITAB4
 extern BS_TICKA                 ; its tick, resume
 
 ; Z-Gradt's gold
@@ -277,7 +285,7 @@ READY_GO    equ 5                   ; frames after GET READY before the
                                     ; player's Z-Gradt moves
 MODEL_COPY  equ 0x800
 OBJECT      equ 0x600               ; a fight object, 0x1ae0c40 to 0x1ae1240
-AI_STATE    equ 0x1e0
+AI_STATE    equ 0x1e8               ; room for the longest build's (BS_AIDW)
 FX          equ 24 * 0x24           ; the effects tables, BS_FXA and BS_FX2A
 FX2         equ 24 * 0x38
 
@@ -287,6 +295,20 @@ FX2         equ 24 * 0x38
         mov     ecx, %3 / 4
         cld
         rep movsd
+%endmacro
+
+%macro COPYAI 2                     ; dst, src: an AI state, BS_AIDW dwords
+        push    esi
+        push    edi
+        push    ecx
+        mov     esi, %2
+        mov     edi, %1
+        mov     ecx, BS_AIDW
+        cld
+        rep movsd
+        pop     ecx
+        pop     edi
+        pop     esi
 %endmacro
 
 ; The standing copy: the player's boss object and its AI state, the first
@@ -309,7 +331,7 @@ ZSTAND      equ 90
         jb      %%out
 %%take: mov     byte [%6], 1
         COPYN   %4, %1, OBJECT
-        COPYN   %5, %3, AI_STATE
+        COPYAI  %5, %3
 %%out:
 %endmacro
 
@@ -2155,13 +2177,13 @@ bosspal:
         jmp     %2
 %%boss: pushad
         COPYN   objsave, %3, OBJECT
-        COPYN   %8, %7, AI_STATE
+        COPYAI  %8, %7
         COPYN   fxsave, %13, FX
         COPYN   fx2save, %14, FX2
         cmp     dword [%10 + 0x64], eax
         jne     %%now               ; no standing copy of this machine
         COPYN   %3, %10, OBJECT
-        COPYN   %7, %11, AI_STATE
+        COPYAI  %7, %11
 %%now:  push    dword [BS_RFLAG]
         push    dword [SEMUTE]
         push    dword [BS_ZMODA]
@@ -2210,7 +2232,7 @@ bosspal:
         pop     dword [BS_RFLAG]
         COPYN   %14, fx2save, FX2   ; what the draw spawned - exhaust,
         COPYN   %13, fxsave, FX     ; placed by the turntable - is undone
-        COPYN   %7, %8, AI_STATE
+        COPYAI  %7, %8
         COPYN   %3, objsave, OBJECT
         popad
         ret
@@ -2465,7 +2487,6 @@ ZL_CAMYAW  equ 0x1a
 ; which fires along the facing. Once GET READY is up and it has landed.
 ZL_JUMP     equ 0x0206
 ZL_STEP     equ 0x200               ; a frame: a half turn in 64
-ZL_LASER    equ 0x1c4               ; the laser's state in A's AI block
 ZL_LEVERS  equ 0x108
 ZL_X       equ 8
 ZL_Z       equ 0x10
@@ -2480,11 +2501,11 @@ zlock:
         cmp     dword [BS_ZTIMA], 0
         jge     .off                ; still flying in
 .landed:
-        mov     ecx, BS_BSSA        ; the player's laser state, banked on
-        cmp     dword [banked_a], 0 ; the last stage (as ZEND)
+        mov     ecx, BS_BSSA        ; the player's laser state (BS_AILASER
+        cmp     dword [banked_a], 0 ; in), banked on the last stage (as ZEND)
         je      .live
         mov     ecx, bank_a
-.live:  cmp     dword [ecx + ZL_LASER], 0
+.live:  cmp     dword [ecx + BS_AILASER], 0
         jl      .free
         mov     dword [zl_on], 0    ; the laser out: no lock-on
         ret
@@ -3314,7 +3335,7 @@ BALBAS      equ 7                   ; whose shot code takes only its own slots
 %endmacro
 
         ZEND    zend_a, BS_PH0A, BS_OBJA, BS_IDA, BS_ESTEPA, BS_TIMEA, \
-                BS_BSSA, bank_a, banked_a, 0x1c4, BS_G1PA, BS_EVA, BS_SPDA
+                BS_BSSA, bank_a, banked_a, BS_AILASER, BS_G1PA, BS_EVA, BS_SPDA
 
 ; Each segment of Z-Gradt's beam, a step at a time, asks the arena how high
 ; its floor is where it has got to, and stops there if under it: outside
@@ -3812,21 +3833,6 @@ zready_a:
 
         CLONE   clone_a, BS_CLONEA, copy_a, copied_a, BS_STAGEA
 
-; dst, src: one block of Z-Gradt's AI state.
-%macro COPYAI 2
-        push    esi
-        push    edi
-        push    ecx
-        mov     esi, %2
-        mov     edi, %1
-        mov     ecx, AI_STATE / 4
-        cld
-        rep movsd
-        pop     ecx
-        pop     edi
-        pop     esi
-%endmacro
-
 ; Z-Gradt's setup points four words of the AI state at its side's tables:
 ; the meshes of its upper parts, and with them the palette slots they draw
 ; in. ZTAB0 for side 0 ([object+0x68]), ZTAB1 otherwise, each at ZTAB_2..4
@@ -3858,9 +3864,10 @@ ZTAB_4      equ 0x260
         cmp     dword [%6], 0
         jne     %%have
         COPYAI  %4, %3
-        mov     dword [%4 + %7], -1
-        mov     dword [%4 + %8], -1
-        mov     dword [%4 + %9], -1
+        mov     edx, %4
+        mov     dword [edx + %7], -1
+        mov     dword [edx + %8], -1
+        mov     dword [edx + %9], -1
         mov     dword [%6], 1
         push    eax                 ; the player's side's tables (ZTAB_2..4)
         mov     eax, [esp + 8]
@@ -3868,13 +3875,13 @@ ZTAB_4      equ 0x260
         mov     eax, BS_ZTAB0
         je      %%side
         mov     eax, BS_ZTAB1
-%%side: mov     [%4 + %10], eax
+%%side: mov     [edx + %10], eax
         add     eax, ZTAB_2
-        mov     [%4 + %11], eax
+        mov     [edx + %11], eax
         add     eax, ZTAB_3 - ZTAB_2
-        mov     [%4 + %12], eax
+        mov     [edx + %12], eax
         add     eax, ZTAB_4 - ZTAB_3
-        mov     [%4 + %13], eax
+        mov     [edx + %13], eax
         pop     eax
 %%have:
         COPYAI  %5, %3
@@ -3888,7 +3895,7 @@ ZTAB_4      equ 0x260
 %endmacro
 
         AI      ai_a, BS_TICKA, BS_BSSA, bank_a, scratch_a, banked_a, \
-                0x1c, 0x1b8, 0x1c4, 0x1bc, 0x1c0, 0x4, 0xd0, BS_STAGEA
+                BS_AI1C, BS_AITIMER, BS_AILASER, BS_AITAB, BS_AITAB2, BS_AITAB3, BS_AITAB4, BS_STAGEA
 
 ; Every machine's object is set up with attack 1, a weapon's at rest; for
 ; Z-Gradt, attack 1 fires its ring lasers. The CPU's has its AI to take
