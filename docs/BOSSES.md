@@ -61,9 +61,7 @@ unpatched game never reads it.
 - Both bosses play as player machines, every stage, including Z-Gradt
   against Z-Gradt on the last one.
 - The KO replay and the win and lose shots pull back to frame a boss's
-  size, the replay's never downwards, and Jaguarandi's win shots close in
-  no nearer than 250 units (the game's end at 15, inside its legs); on a
-  small arena the win shots that
+  size, the replay's never downwards; on a small arena the win shots that
   need floor under the camera try a turn round at the boss's distance,
   then four turns each a quarter nearer the usual, then the usual.
 - The bosses' chase camera is the game's own - its modes, its glide
@@ -89,6 +87,8 @@ unpatched game never reads it.
 - Z-Gradt's laser turns the right Z-Gradt gold when both are on the field,
   and a Z-Gradt that falls darkens alone: the player's keeps the colours it
   was given.
+- Jaguarandi keeps its size through its win pose: the game's routine for
+  that pose grows the model 0.02 a frame for as long as the pose runs.
 - The Player Data Report after stage 5 turns the boss itself: Jaguarandi
   in its select pose, as on its unlock screen, and Z-Gradt standing.
 - The scoreboard names them Z-GRADT and JAGUARANDI; the game's own table
@@ -256,6 +256,8 @@ with the texture bank the fights had loaded reloaded.
   under it comes back as a wall facing the way it moves, and a smaller
   one as its height now plus the rise, so it never sticks on a floor it
   landed below.
+- **Jaguarandi's win pose** - the pose's routine, its model header's slot
+  0x43c, is called with the player's scale put back after it (`jwin_a`).
 - **Z-Gradt's death** - it darkens through palette events 0x401 to 0x43f,
   which the handler takes to be the CPU's; the player's are passed over
   (`zdark_a`, `zfade_a`).

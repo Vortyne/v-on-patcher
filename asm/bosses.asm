@@ -4275,15 +4275,37 @@ zswap:
 ; one-player game they are 0x502d21 (sub-state 0x14, the KO replay) and
 ; 0x4b4456 (0x0c, YOU WIN, PERFECT, YOU LOSE), and their twins.
 
+; --- the win pose ----------------------------------------------------------
+
+; A machine's win pose (state 0x2a) runs the routine at its model header's
+; slot 0x43c each frame. Jaguarandi's (0x50e230) steps its motion and adds
+; 0.02 to its scale (the object's +0xac) each time, without end, so the
+; player's Jaguarandi grew through YOU WIN. The player's keeps its scale
+; across the call. In place of `call [eax+0x43c]` in state 0x2a's handler,
+; a nop after; [esp+4] the object, eax its model header.
+JWIN_SLOT   equ 0x43c
+jwin_a:
+        mov     ecx, [esp + 4]
+        cmp     dword [ecx + 0x64], JAG
+        jne     .stock
+        cmp     ecx, BS_OBJA
+        jne     .stock
+        push    dword [ecx + 0xac]  ; its scale
+        push    ecx
+        call    [eax + JWIN_SLOT]
+        add     esp, 4
+        mov     ecx, [esp + 8]
+        pop     dword [ecx + 0xac]
+        ret
+.stock: jmp     [eax + JWIN_SLOT]
+
 ; The win camera (0x50ed51, 0x599fd1) runs one of eight shots, each of
 ; which sets a distance to its subject, places the eye that far out, and
 ; aims from the eye and that distance. Scaling the distance where it is
 ; stored moves the eye back with the aim kept. A boss's is the game's
-; times its factor (win_jag, win_z), and at least its minimum (win_jmin,
-; win_zmin): the shots that close in end as near as 15, inside
-; Jaguarandi's legs however scaled. The floor search's later turns keep
-; a share of the factor's extra and of the minimum ([win_share], 1
-; otherwise). [ebp+8] is the subject; st0 the distance, in and out.
+; times its factor (win_jag, win_z); the floor search's later turns keep
+; a share of the factor's extra ([win_share], 1 otherwise). [ebp+8] is
+; the subject; st0 the distance, in and out.
 winfactor:
         push    eax
         mov     eax, [ebp + 8]
@@ -4293,22 +4315,14 @@ winfactor:
         cmp     eax, JAG
         jne     .out
         fld     dword [win_jag]
-        fld     dword [win_jmin]
         jmp     .go
 .z:     fld     dword [win_z]
-        fld     dword [win_zmin]
-.go:    fmul    dword [win_share]   ; the least this turn
-        fxch    st1
-        fld1
+.go:    fld1
         fsubp   st1, st0            ; the factor's extra over one,
         fmul    dword [win_share]   ; this turn's share of it
         fld1
         faddp   st1, st0
-        fmulp   st2, st0            ; the distance by it
-        fcomi   st0, st1            ; the least, or the distance
-        jbe     .drop
-        fxch    st1
-.drop:  fstp    st0
+        fmulp   st1, st0            ; the distance by it
 .out:   pop     eax
         ret
 
@@ -4515,8 +4529,6 @@ zfl_wall: dd    1000.0              ; the arena's floor at a wall, and over
 zfl_step: dd    4.0                 ; the rise Z-Gradt's moves take, its own
 win_z:  dd      4.0                 ; win and lose: the subject's distance
 win_jag: dd     2.0                 ; times this
-win_jmin: dd    250.0               ; and at least this: Jaguarandi's,
-win_zmin: dd    0.0                 ; Z-Gradt's (none)
 win_share: dd   1.0                 ; the floor search's share of the extra
 win_35: dd      35.0                ; the two a shot sets as constants
 win_30: dd      30.0
