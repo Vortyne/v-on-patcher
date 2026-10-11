@@ -62,15 +62,16 @@ unpatched game never reads it.
   against Z-Gradt on the last one.
 - The KO replay and the win and lose shots pull back to frame a boss's
   size, the replay's never downwards, and Jaguarandi's win shots close in
-  no nearer than 100 units (the game's end at 15, inside its legs); on a
+  no nearer than 250 units (the game's end at 15, inside its legs); on a
   small arena the win shots that
   need floor under the camera try a turn round at the boss's distance,
   then four turns each a quarter nearer the usual, then the usual.
 - The bosses' chase camera is the game's own - its modes, its glide
   between them, its pan as the opponent jumps - stood further out: two and
   a half times as far for Z-Gradt, half as far again for Jaguarandi.
-  Z-Gradt's never closes in as the opponent comes near, and never levels
-  out below its high angle as it turns on the spot; it turns with Z-Gradt.
+  Neither closes in as the opponent comes near, and Z-Gradt's never
+  levels out below its high angle as it turns on the spot; it turns with
+  Z-Gradt.
 - Z-Gradt's fly-in starts part of the way in rather than from beyond the
   arena's backdrop: indoors (Deathtrap, the Spaceport, the Secret Base) it
   only drops into place, and outdoors it comes in from 784 units out,

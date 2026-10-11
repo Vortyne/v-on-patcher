@@ -3554,28 +3554,30 @@ is_zgradt:
 ; the nearer side - and eases the live one at +0x40 towards it; and a
 ; pitch to aim for at +0x1e - 0xc00 in the poses, 0x600 turning, up to
 ; 0x3000 as the other jumps - which +0x18 steps towards by 0x600 a frame
-; at most. Z-Gradt's camera is the game's, its modes and their glide and
+; at most. A boss's camera is the game's, its modes and their glide and
 ; its pan after a jump, but for two things: the distance never closes
-; below zcam_min, the poses' 56, so the camera does not zoom in on it as
-; the CPU comes near, and the pitch never aims below ZCAM_PITCH, so
-; turning on the spot does not level it out. The distance itself is
-; scaled where the eye is placed (zeye_a). In place of `mov eax,
-; [ebp+CAM_PTR]; movsx eax, word [eax+0x1e]`, the pitch's read, once the
-; game's easing of the distance is done with.
+; below cam_min, the poses' 56, so the camera does not zoom in on a boss
+; as the CPU comes near; and for Z-Gradt the pitch never aims below
+; ZCAM_PITCH, so turning on the spot does not level it out. The distance
+; itself is scaled where the eye is placed (zeye_a). In place of `mov
+; eax, [ebp+CAM_PTR]; movsx eax, word [eax+0x1e]`, the pitch's read, once
+; the game's easing of the distance is done with.
 ZCAM_PITCH  equ 0xc00
 %macro LIVE 2                       ; label, resume
 %1:
-        call    is_zgradt
-        jne     %%stock
+        cmp     dword [boss], JAG   ; a boss's: 8 or 9, else 0
+        jb      %%stock
         mov     ecx, [ebp + CAM_PTR]
         fld     dword [ecx + 0x3c]
-        fcomp   dword [zcam_min]
+        fcomp   dword [cam_min]
         fnstsw  ax
         test    ah, 1               ; C0: under the least
         jz      %%pitch
-        mov     eax, [zcam_min]
+        mov     eax, [cam_min]
         mov     [ecx + 0x3c], eax
 %%pitch:
+        call    is_zgradt
+        jne     %%stock
         cmp     word [ecx + 0x1e], ZCAM_PITCH
         jge     %%stock
         mov     word [ecx + 0x1e], ZCAM_PITCH
@@ -4461,7 +4463,7 @@ stood_ca: dd    0                   ; the CPU's boss, standing
 pull:   dd      320.0               ; how far back the eye goes
 zcam_k: dd      2.5                 ; the chase camera's distance, times
 jcam_k: dd      1.5                 ; the game's, Z-Gradt's and Jaguarandi's
-zcam_min: dd    56.0                ; and the least Z-Gradt's closes to
+cam_min: dd     56.0                ; and the least a boss's closes to
 zcam_near: dd   180.0               ; and the least its eye stands out
 ecam_jag: dd    2.5                 ; the ending's camera, how far out
 ecam_z: dd      4.0
@@ -4513,7 +4515,7 @@ zfl_wall: dd    1000.0              ; the arena's floor at a wall, and over
 zfl_step: dd    4.0                 ; the rise Z-Gradt's moves take, its own
 win_z:  dd      4.0                 ; win and lose: the subject's distance
 win_jag: dd     2.0                 ; times this
-win_jmin: dd    100.0               ; and at least this: Jaguarandi's,
+win_jmin: dd    250.0               ; and at least this: Jaguarandi's,
 win_zmin: dd    0.0                 ; Z-Gradt's (none)
 win_share: dd   1.0                 ; the floor search's share of the extra
 win_35: dd      35.0                ; the two a shot sets as constants
