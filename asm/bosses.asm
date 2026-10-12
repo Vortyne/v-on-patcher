@@ -437,8 +437,7 @@ confirm_a:
 
 ; The select's lineup is a scene script: the camera, then the eight in a
 ; row 20 apart, Temjin to Raiden, then the hangar. The cursor runs 0 to 7
-; and a table turns it into a machine. In one player with a boss
-; unlocked the lineup goes on
+; and a table turns it into a machine. In one player the lineup goes on
 ; past Raiden to Jaguarandi and Z-Gradt, cursor 8 and 9: two more records
 ; after Raiden's, the cursor's limit 9, and the tables (0x621870, the
 ; machine of an object, and 0x621878, of the cursor, two on) ten long, in
@@ -489,12 +488,10 @@ selscr_a:
         mov     eax, [BS_JAGA + SEL_POSED]
         mov     [selrows + JAG * SEL_ROWS + 4], eax
         mov     byte [selbuilt], 1
-.set:   mov     eax, BS_SELSCRA     ; the game's lineup in two players and
-        mov     dword [selhas], 0   ; with nothing unlocked: no boss stands
-        cmp     dword [GAMEMODE], 0 ; there
+.set:   mov     eax, BS_SELSCRA     ; the game's lineup in two players:
+        mov     dword [selhas], 0   ; no boss stands there
+        cmp     dword [GAMEMODE], 0
         jne     .script
-        cmp     dword [unl_level], 0
-        je      .script
         mov     eax, selscript
         mov     dword [selhas], 1
 .script:
@@ -2554,8 +2551,6 @@ ZL_CAMYAW  equ 0x1a
 ZL_JUMP     equ 0x0206
 ZL_STEP     equ 0x200               ; a frame: a half turn in 64
 ZL_LEVERS  equ 0x108
-ZL_TURN    equ 0x10a               ; the stick decoded: its turn
-ZL_GO      equ 0x10e               ; and its throttle
 ZL_X       equ 8
 ZL_Z       equ 0x10
 
@@ -3849,8 +3844,25 @@ zready_a:
 ; moves, a smaller one taken, its height following the ground. In place
 ; of the three calls to its own query; cdecl, (the object, x, z, the
 ; facing's word), the height in st0.
+;
+; Z-Gradt's super laser fires along its facing, and the CPU's stands
+; still for it; the player's stick moved it as it fired. While the
+; player's laser is out (its state, BS_AILASER, 0 up; -1 otherwise) every
+; place it would move to is a wall, so its code stops it as at an
+; arena's edge.
 zfloor_a:
-        cmp     dword [BS_ARENA], ARENA_MOON
+        cmp     dword [esp + 4], BS_OBJA
+        jne     .arena
+        cmp     dword [boss], ZGRADT
+        jne     .arena
+        mov     eax, BS_BSSA
+        cmp     dword [eax + BS_AILASER], 0
+        jl      .arena
+        mov     eax, [esp + 0x10]   ; the laser out: a wall, facing it
+        mov     word [eax], 0
+        fld     dword [zfl_far]
+        ret
+.arena: cmp     dword [BS_ARENA], ARENA_MOON
         je      BS_ZBOXA            ; its own box there, the args as they are
         push    ebp
         mov     ebp, esp
@@ -3991,26 +4003,8 @@ ZTAB_2      equ 0x58
 ZTAB_3      equ 0x248
 ZTAB_4      equ 0x260
 
-; Z-Gradt's super laser fires along its facing, and the CPU's stands
-; still for it; the player's levers moved it as it fired. From its tick,
-; before they are read: the lever word and the turn and throttle its
-; code moves by (+0x10a, +0x10e, the clip's decoding of the stick) zero
-; while the laser is out, the state the player's is in (banked on the
-; last stage, as zlock has it).
-zstill:
-        mov     ecx, BS_BSSA
-        cmp     dword [banked_a], 0
-        je      .live
-        mov     ecx, bank_a
-.live:  cmp     dword [ecx + BS_AILASER], 0
-        jl      .out
-        mov     word [BS_OBJA + ZL_LEVERS], 0
-        mov     word [BS_OBJA + ZL_TURN], 0
-        mov     word [BS_OBJA + ZL_GO], 0
-.out:   ret
-
 ; The player's Z-Gradt ticks against its own copy of the AI state, swapped
-; in around the call, on the last stage, where the CPU's shares it. The copy starts as the CPU's, just initialised - a
+; in around the call. The copy starts as the CPU's, just initialised - a
 ; zero one sends 0x1ad01c4 through a NULL - with the three timers the init
 ; sets to -1 set again.
 %macro AI 14        ; label, resume, live state, bank, scratch, flag,
@@ -4018,13 +4012,8 @@ zstill:
                     ; four words the side's tables go in, and the
                     ; copy's stage
 %1:
-        cmp     dword [esp + 4], BS_OBJA
-        jne     %%stock
-        cmp     dword [boss], ZGRADT
-        jne     %%stock
-        call    zstill
-        cmp     dword [%14], LAST_STAGE
-        je      %%wrap
+        LAST    %%stock, %14
+        IF_PLAYER dword [esp + 4], %%wrap
 %%stock:
         push    ebp
         mov     ebp, esp
@@ -4583,6 +4572,7 @@ zf_start: dd    100, 199, 100, 60, 100, 199, 100, 100, 100, 199 ; the
                                     ; Air, Fact, Water, Fore, Inka, Dock,
                                     ; Moon, Tro, Fld, Core
 zfl_wall: dd    1000.0              ; the arena's floor at a wall, and over
+zfl_far: dd     100000.0            ; its own query's wall
 zfl_step: dd    4.0                 ; the rise Z-Gradt's moves take, its own
 win_z:  dd      4.0                 ; win and lose: the subject's distance
 win_jag: dd     2.0                 ; times this

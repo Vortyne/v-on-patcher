@@ -81,7 +81,7 @@ unpatched game never reads it.
   on the last stage, where the CPU's Z-Gradt flies in instead, the round
   starts as it always did.
 - Z-Gradt stands still while its super laser is out, as the CPU's does;
-  the levers move it again once the laser is gone.
+  it moves again once the laser is gone.
 - Z-Gradt has no jump. The jump - both levers out, or the jump key - turns
   it to face the opponent instead, a half turn in 64 frames, the
   camera with it; not while its super laser is out.
@@ -107,7 +107,7 @@ unpatched game never reads it.
 - One player only, by design: the bosses are far stronger than the eight,
   so two-player and internet play keep the select to the eight for a fair
   fight, and nothing here runs there. The two-player hangar is the
-  game's own lineup, as is the one-player hangar with nothing unlocked.
+  game's own lineup.
 - The Quick VR Select, the game's option, shows the eight only: it has no
   backdrop art for a boss. Turn it off to play one.
 - The bosses' weapons have no ammo to speak of, as the game's own code
