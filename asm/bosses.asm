@@ -1967,36 +1967,32 @@ selinfo_a:
 ; routine of its own (BS_SELQINFOA): PLAYER 1 or 2, then for the machine
 ; - the cursor is the machine there - three weapon lines at (BS_QTXTX,
 ; BS_QTXTY on, two rows apart) and the name block with its code two rows
-; above at (7, BS_QTXTY + 2), from tables the bosses have no rows in. For
-; a boss: the game's for no machine (-1: PLAYER n and the blanks it
-; prints for none), then the boss's four weapons, its name block and its
-; code over them, on the plane the game writes. In place of the call to
-; it; [esp+4] the cursor.
+; above at (7, BS_QTXTY + 2), from tables the bosses have no rows in, on
+; one plane. For a boss: the game's for no machine (-1: PLAYER n and the
+; blanks it prints for none), then the boss's four weapons, its name
+; block and its code over them. For one of the eight, the four lines
+; blanked first, as the hangar's are: the game writes its shorter lines
+; over a boss's longer ones. In place of the call to it; [esp+4] the
+; cursor.
 selqinfo_a:
         mov     eax, [esp + 4]
         cmp     eax, JAG
-        jb      BS_SELQINFOA
+        jae     .boss
+        test    eax, eax
+        jl      BS_SELQINFOA        ; none: the game's blanks
         push    ebx
+        mov     ebx, selblank
+        call    .lines
+        pop     ebx
+        jmp     BS_SELQINFOA
+.boss:  push    ebx
         lea     ebx, [eax - JAG]
         imul    ebx, ebx, SEL_TXT
         add     ebx, seltxt
         push    -1
         call    BS_SELQINFOA
         add     esp, 4
-%assign i 0
-%rep SEL_LINES
-        mov     eax, [BS_QTXTY]
-        add     eax, 2 * i
-        push    eax
-        push    dword [BS_QTXTX]
-        call    BS_TXTPOSA
-        add     esp, 8
-        lea     eax, [ebx + 0x14 * i]
-        push    eax
-        call    BS_PRINT2A
-        add     esp, 4
-%assign i i + 1
-%endrep
+        call    .lines
         mov     eax, [BS_QTXTY]
         add     eax, 2
         push    eax
@@ -2021,6 +2017,28 @@ selqinfo_a:
         call    BS_PRINT2A
         add     esp, 4
         pop     ebx
+        ret
+.lines: push    esi                 ; the four lines from ebx, 0x14 apart
+        push    edi                 ; (or selblank's again)
+        mov     esi, ebx
+        xor     edi, edi
+.line:  mov     eax, [BS_QTXTY]
+        add     eax, edi
+        push    eax
+        push    dword [BS_QTXTX]
+        call    BS_TXTPOSA
+        add     esp, 8
+        push    esi
+        call    BS_PRINT2A
+        add     esp, 4
+        cmp     esi, selblank
+        je      .same
+        add     esi, 0x14
+.same:  add     edi, 2
+        cmp     edi, 2 * SEL_LINES
+        jb      .line
+        pop     edi
+        pop     esi
         ret
 
 ; esi the print for the plane this frame writes, as the game picks it.
