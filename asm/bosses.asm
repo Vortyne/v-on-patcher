@@ -108,6 +108,7 @@ extern BS_SELINFOA              ; and its text for a cursor
 extern BS_FRAMEA                ; the frame counter
 extern BS_SELMODE
 extern BS_SELQUICK              ; nonzero: the quick select is up
+extern BS_SELHIDEX              ; the confirm's hiding of the machines, past
 extern BS_PRINT1A               ; text: print on one plane or the other,
 extern BS_PRINT2A               ; place, clear a block, a block of tiles
 extern BS_TXTPOSA
@@ -436,7 +437,8 @@ confirm_a:
 
 ; The select's lineup is a scene script: the camera, then the eight in a
 ; row 20 apart, Temjin to Raiden, then the hangar. The cursor runs 0 to 7
-; and a table turns it into a machine. In one player the lineup goes on
+; and a table turns it into a machine. In one player with a boss
+; unlocked the lineup goes on
 ; past Raiden to Jaguarandi and Z-Gradt, cursor 8 and 9: two more records
 ; after Raiden's, the cursor's limit 9, and the tables (0x621870, the
 ; machine of an object, and 0x621878, of the cursor, two on) ten long, in
@@ -487,9 +489,33 @@ selscr_a:
         mov     eax, [BS_JAGA + SEL_POSED]
         mov     [selrows + JAG * SEL_ROWS + 4], eax
         mov     byte [selbuilt], 1
-.set:   mov     dword [BS_SCRPTR], selscript
+.set:   mov     eax, BS_SELSCRA     ; the game's lineup in two players and
+        mov     dword [selhas], 0   ; with nothing unlocked: no boss stands
+        cmp     dword [GAMEMODE], 0 ; there
+        jne     .script
+        cmp     dword [unl_level], 0
+        je      .script
+        mov     eax, selscript
+        mov     dword [selhas], 1
+.script:
+        mov     [BS_SCRPTR], eax
         popad
         ret
+
+; Confirming hides the machines, objects 2 up to the bound, before the
+; one taken launches: the eight's, and the bosses' two with them when
+; they stand in the row. In place of `cmp [i], 10; jge past`, five nops
+; after the call; [ebp-0x54] the object.
+selhide_a:
+        mov     eax, SEL_EIGHT
+        cmp     dword [selhas], 0
+        je      .bound
+        add     eax, 2
+.bound: cmp     [ebp - 0x54], eax
+        jge     .past
+        ret
+.past:  add     esp, 4
+        jmp     BS_SELHIDEX
 
 ; In place of `cmp [cursor], 7`, three nops after the call; the flags as
 ; it leaves them. eax the player times 21, as the game indexes.
@@ -2528,6 +2554,8 @@ ZL_CAMYAW  equ 0x1a
 ZL_JUMP     equ 0x0206
 ZL_STEP     equ 0x200               ; a frame: a half turn in 64
 ZL_LEVERS  equ 0x108
+ZL_TURN    equ 0x10a               ; the stick decoded: its turn
+ZL_GO      equ 0x10e               ; and its throttle
 ZL_X       equ 8
 ZL_Z       equ 0x10
 
@@ -3965,8 +3993,10 @@ ZTAB_4      equ 0x260
 
 ; Z-Gradt's super laser fires along its facing, and the CPU's stands
 ; still for it; the player's levers moved it as it fired. From its tick,
-; before the levers are read: neutral while the laser is out, the state
-; the player's is in (banked on the last stage, as zlock has it).
+; before they are read: the lever word and the turn and throttle its
+; code moves by (+0x10a, +0x10e, the clip's decoding of the stick) zero
+; while the laser is out, the state the player's is in (banked on the
+; last stage, as zlock has it).
 zstill:
         mov     ecx, BS_BSSA
         cmp     dword [banked_a], 0
@@ -3975,6 +4005,8 @@ zstill:
 .live:  cmp     dword [ecx + BS_AILASER], 0
         jl      .out
         mov     word [BS_OBJA + ZL_LEVERS], 0
+        mov     word [BS_OBJA + ZL_TURN], 0
+        mov     word [BS_OBJA + ZL_GO], 0
 .out:   ret
 
 ; The player's Z-Gradt ticks against its own copy of the AI state, swapped
@@ -4790,6 +4822,7 @@ selzout: times 0x400 db 0           ; the pose's draw's output
         align   4, db 0
 selrow: times SEL_ROWW * 8 dw 0
 selrow_quick: dd 0                  ; the quick select up as it was made
+selhas: dd      0                   ; the bosses stand in the lineup
         align   4, db 0
 selrows: times 10 * SEL_ROWS db 0
         align   4, db 0

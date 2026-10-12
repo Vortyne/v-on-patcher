@@ -106,8 +106,8 @@ unpatched game never reads it.
 
 - One player only, by design: the bosses are far stronger than the eight,
   so two-player and internet play keep the select to the eight for a fair
-  fight, and nothing here runs there. The bosses do not stand in the
-  two-player hangar.
+  fight, and nothing here runs there. The two-player hangar is the
+  game's own lineup, as is the one-player hangar with nothing unlocked.
 - The Quick VR Select, the game's option, shows the eight only: it has no
   backdrop art for a boss. Turn it off to play one.
 - The bosses' weapons have no ammo to speak of, as the game's own code
