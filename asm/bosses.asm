@@ -107,7 +107,9 @@ extern BS_SELMDLA               ; the select's model of a machine
 extern BS_SELINFOA              ; and its text for a cursor
 extern BS_FRAMEA                ; the frame counter
 extern BS_SELMODE
-extern BS_SELQUICK              ; nonzero: the quick select is up
+extern BS_SELQINFOA             ; the quick select's texts for a cursor,
+extern BS_QTXTX                 ; and where it puts them: the column,
+extern BS_QTXTY                 ; the row
 extern BS_SELHIDEX              ; the confirm's hiding of the machines, past
 extern BS_PRINT1A               ; text: print on one plane or the other,
 extern BS_PRINT2A               ; place, clear a block, a block of tiles
@@ -397,11 +399,6 @@ tick:
         jne     .done
         test    edx, edx
         jz      .done
-        mov     eax, [BS_SELQUICK]  ; the quick select up, found out after
-        cmp     eax, [selrow_quick] ; the row was made: made again
-        je      .same
-        call    selrow_make
-.same:
         call    seljagpal
         call    selzlift
 .done:  popad
@@ -533,8 +530,6 @@ selinit_a:
         cmp     eax, JAG
         jb      .eight
         cmp     dword [GAMEMODE], 0
-        jne     .raiden
-        cmp     dword [BS_SELQUICK], 0
         jne     .raiden
         ret
 .raiden:
@@ -1968,6 +1963,66 @@ selinfo_a:
         pop     ebx
         ret
 
+; The Quick VR Select, the game's option, writes the cursor's texts by a
+; routine of its own (BS_SELQINFOA): PLAYER 1 or 2, then for the machine
+; - the cursor is the machine there - three weapon lines at (BS_QTXTX,
+; BS_QTXTY on, two rows apart) and the name block with its code two rows
+; above at (7, BS_QTXTY + 2), from tables the bosses have no rows in. For
+; a boss: the game's for no machine (-1: PLAYER n and the blanks it
+; prints for none), then the boss's four weapons, its name block and its
+; code over them, on the plane the game writes. In place of the call to
+; it; [esp+4] the cursor.
+selqinfo_a:
+        mov     eax, [esp + 4]
+        cmp     eax, JAG
+        jb      BS_SELQINFOA
+        push    ebx
+        lea     ebx, [eax - JAG]
+        imul    ebx, ebx, SEL_TXT
+        add     ebx, seltxt
+        push    -1
+        call    BS_SELQINFOA
+        add     esp, 4
+%assign i 0
+%rep SEL_LINES
+        mov     eax, [BS_QTXTY]
+        add     eax, 2 * i
+        push    eax
+        push    dword [BS_QTXTX]
+        call    BS_TXTPOSA
+        add     esp, 8
+        lea     eax, [ebx + 0x14 * i]
+        push    eax
+        call    BS_PRINT2A
+        add     esp, 4
+%assign i i + 1
+%endrep
+        mov     eax, [BS_QTXTY]
+        add     eax, 2
+        push    eax
+        push    7
+        call    BS_TXTPOSA
+        add     esp, 8
+        push    3
+        push    0x26
+        call    BS_TCLEARA
+        add     esp, 8
+        push    dword [ebx + SEL_LOGO + 8]
+        push    dword [ebx + SEL_LOGO + 4]
+        push    dword [ebx + SEL_LOGO]
+        call    BS_TBLOCKA
+        add     esp, 12
+        push    dword [BS_QTXTY]
+        push    8
+        call    BS_TXTPOSA
+        add     esp, 8
+        lea     eax, [ebx + SEL_CODE]
+        push    eax
+        call    BS_PRINT2A
+        add     esp, 4
+        pop     ebx
+        ret
+
 ; esi the print for the plane this frame writes, as the game picks it.
 selplane:
         mov     eax, [BS_FRAMEA]
@@ -2016,8 +2071,6 @@ SEL_ROWW    equ SEL_ROW + 2 * 7     ; and with the bosses'
 SEL_ICON    equ 6
 SEL_ICONW   equ 0x137a              ; the first tile's map entry
 selrow_make:
-        mov     eax, [BS_SELQUICK]  ; made for this select
-        mov     [selrow_quick], eax
         cld
         xor     ebx, ebx
 .row:   imul    esi, ebx, SEL_ROW * 2
@@ -2042,8 +2095,6 @@ selrow_make:
         stosw
         mov     ecx, SEL_ICON
         cmp     dword [GAMEMODE], 0
-        jne     .blank
-        cmp     dword [BS_SELQUICK], 0 ; or the quick select
         jne     .blank
         cmp     ebp, [unl_level]    ; or a boss still locked
         jae     .blank
@@ -2071,8 +2122,6 @@ SEL_SHIFT2  equ 7
 selshift:                           ; eax the shift, in columns
         xor     eax, eax
         cmp     dword [GAMEMODE], 0
-        jne     .out
-        cmp     dword [BS_SELQUICK], 0
         jne     .out
         cmp     dword [unl_level], 1
         jb      .out
@@ -2123,8 +2172,6 @@ SEL_MORE    equ 20
 seltime:
         mov     eax, SEL_TIME
         cmp     dword [GAMEMODE], 0
-        jne     .out
-        cmp     dword [BS_SELQUICK], 0
         jne     .out
         cmp     dword [unl_level], 0
         je      .out
@@ -4811,7 +4858,6 @@ selzvar: times SEL_ZBONES dw 0      ; every part as undamaged
 selzout: times 0x400 db 0           ; the pose's draw's output
         align   4, db 0
 selrow: times SEL_ROWW * 8 dw 0
-selrow_quick: dd 0                  ; the quick select up as it was made
 selhas: dd      0                   ; the bosses stand in the lineup
         align   4, db 0
 selrows: times 10 * SEL_ROWS db 0

@@ -46,6 +46,9 @@ unpatched game never reads it.
 - The portraits, the 1P/2P marks and the red frame move left to make room
   - by four columns with Jaguarandi, seven with both - so the row stays on
   a 4:3 screen. With nothing unlocked the select is exactly the original.
+- The Quick VR Select, the game's option, has the bosses too: the same
+  row, cursor and colours, and a boss's name and weapons where it writes
+  the eight's.
 - The countdown runs 20 seconds longer with a boss unlocked, for the walk
   to the end of the row and the extra colours.
 - The bosses are lit in their own colours like the eight, and the
@@ -108,8 +111,6 @@ unpatched game never reads it.
   so two-player and internet play keep the select to the eight for a fair
   fight, and nothing here runs there. The two-player hangar is the
   game's own lineup.
-- The Quick VR Select, the game's option, shows the eight only: it has no
-  backdrop art for a boss. Turn it off to play one.
 - The bosses' weapons have no ammo to speak of, as the game's own code
   has them: Z-Gradt's shots are made outside the charge counting, so its
   three gauges stay full, and Jaguarandi's refill faster than it can fire.
@@ -262,6 +263,9 @@ with the texture bank the fights had loaded reloaded.
   under it comes back as a wall facing the way it moves, and a smaller
   one as its height now plus the rise, so it never sticks on a floor it
   landed below.
+- **The Quick VR Select** - its own cursor limit, colour select and hiding
+  before a launch go to the hangar's hooks, and its texts for a boss to
+  `selqinfo_a`, over the ones it writes for no machine.
 - **Z-Gradt's death** - it darkens through palette events 0x401 to 0x43f,
   which the handler takes to be the CPU's; the player's are passed over
   (`zdark_a`, `zfade_a`).
