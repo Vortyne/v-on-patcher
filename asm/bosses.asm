@@ -107,6 +107,7 @@ extern BS_SELMDLA               ; the select's model of a machine
 extern BS_SELINFOA              ; and its text for a cursor
 extern BS_FRAMEA                ; the frame counter
 extern BS_SELMODE
+extern BS_SELQUICK              ; nonzero: the quick select is up
 extern BS_PRINT1A               ; text: print on one plane or the other,
 extern BS_PRINT2A               ; place, clear a block, a block of tiles
 extern BS_TXTPOSA
@@ -395,6 +396,11 @@ tick:
         jne     .done
         test    edx, edx
         jz      .done
+        mov     eax, [BS_SELQUICK]  ; the quick select up, found out after
+        cmp     eax, [selrow_quick] ; the row was made: made again
+        je      .same
+        call    selrow_make
+.same:
         call    seljagpal
         call    selzlift
 .done:  popad
@@ -505,6 +511,8 @@ selinit_a:
         jb      .eight
         cmp     dword [GAMEMODE], 0
         jne     .raiden
+        cmp     dword [BS_SELQUICK], 0
+        jne     .raiden
         ret
 .raiden:
         mov     eax, 7
@@ -515,10 +523,10 @@ selinit_a:
 ; In place of `cmp [colour select], 0`, two nops after the call; the flags
 ; as it leaves them. Up and down cycle the eight's colours, eight each; on
 ; a boss, with the option on, they cycle its own here instead - its own,
-; then each of the eight's but their first (SEL_BCOLS in all) - and to the
+; then each of the eight's eight (SEL_BCOLS in all) - and to the
 ; game it is as if the option were off. ebp the select's frame, [ebp+8]
 ; the player.
-SEL_BCOLS   equ 1 + 8 * 7           ; its own, the eight's but their own
+SEL_BCOLS   equ 1 + 8 * 8           ; its own, and the eight's eight each
 SEL_UP      equ 0x20                ; the pads' bits
 SEL_DOWN    equ 0x10
 selcol_a:
@@ -592,7 +600,9 @@ selmdl_a:
         sub     esp, 0x30
         jmp     BS_SELMDLA + 6
 .none:  jmp     sel_slotsout
-.boss:  mov     eax, [esp + 4]      ; a boss still locked: not there
+.boss:  cmp     dword [GAMEMODE], 0 ; two players: not in the row
+        jne     .none
+        mov     eax, [esp + 4]      ; a boss still locked: not there
         sub     eax, 7
         cmp     eax, [unl_level]
         ja      .none
@@ -1527,7 +1537,7 @@ selbosspal:
         mov     ecx, 2
 .side:  lea     esi, [ecx + eax * 4]
         lea     esi, [BS_PALA + esi * 4]
-        lea     ebx, [edx * 2]
+        lea     ebx, [edx * 2 - 2]  ; its pair
         mov     eax, [esi]
         push    dword [eax + ebx * 4]
         push    edi
@@ -1696,14 +1706,14 @@ selcol:
         ret
 
 ; eax a boss: the colours it was given on the select, eax the machine
-; they are and edx which of its (0: its own, eax 0).
+; they are and edx which of its, one on (0: its own, eax 0).
 selbcol:
         mov     eax, [sel_bcol + (eax - JAG) * 4]
         xor     edx, edx
         test    eax, eax
         jz      .own
         dec     eax
-        mov     ecx, 7
+        mov     ecx, 8
         div     ecx
         inc     edx
         ret
@@ -1983,6 +1993,8 @@ SEL_ROWW    equ SEL_ROW + 2 * 7     ; and with the bosses'
 SEL_ICON    equ 6
 SEL_ICONW   equ 0x137a              ; the first tile's map entry
 selrow_make:
+        mov     eax, [BS_SELQUICK]  ; made for this select
+        mov     [selrow_quick], eax
         cld
         xor     ebx, ebx
 .row:   imul    esi, ebx, SEL_ROW * 2
@@ -2007,6 +2019,8 @@ selrow_make:
         stosw
         mov     ecx, SEL_ICON
         cmp     dword [GAMEMODE], 0
+        jne     .blank
+        cmp     dword [BS_SELQUICK], 0 ; or the quick select
         jne     .blank
         cmp     ebp, [unl_level]    ; or a boss still locked
         jae     .blank
@@ -2034,6 +2048,8 @@ SEL_SHIFT2  equ 7
 selshift:                           ; eax the shift, in columns
         xor     eax, eax
         cmp     dword [GAMEMODE], 0
+        jne     .out
+        cmp     dword [BS_SELQUICK], 0
         jne     .out
         cmp     dword [unl_level], 1
         jb      .out
@@ -2084,6 +2100,8 @@ SEL_MORE    equ 20
 seltime:
         mov     eax, SEL_TIME
         cmp     dword [GAMEMODE], 0
+        jne     .out
+        cmp     dword [BS_SELQUICK], 0
         jne     .out
         cmp     dword [unl_level], 0
         je      .out
@@ -2141,6 +2159,7 @@ bosspal:
         mov     ebx, [bcolor]
         test    ebx, ebx
         jz      .out                ; its own colour, so the boss keeps its
+        dec     ebx                 ; the pair
         and     ecx, 3
         mov     eax, [bsrc]
         lea     eax, [ecx + eax * 4]
@@ -3944,8 +3963,22 @@ ZTAB_2      equ 0x58
 ZTAB_3      equ 0x248
 ZTAB_4      equ 0x260
 
+; Z-Gradt's super laser fires along its facing, and the CPU's stands
+; still for it; the player's levers moved it as it fired. From its tick,
+; before the levers are read: neutral while the laser is out, the state
+; the player's is in (banked on the last stage, as zlock has it).
+zstill:
+        mov     ecx, BS_BSSA
+        cmp     dword [banked_a], 0
+        je      .live
+        mov     ecx, bank_a
+.live:  cmp     dword [ecx + BS_AILASER], 0
+        jl      .out
+        mov     word [BS_OBJA + ZL_LEVERS], 0
+.out:   ret
+
 ; The player's Z-Gradt ticks against its own copy of the AI state, swapped
-; in around the call. The copy starts as the CPU's, just initialised - a
+; in around the call, on the last stage, where the CPU's shares it. The copy starts as the CPU's, just initialised - a
 ; zero one sends 0x1ad01c4 through a NULL - with the three timers the init
 ; sets to -1 set again.
 %macro AI 14        ; label, resume, live state, bank, scratch, flag,
@@ -3953,8 +3986,13 @@ ZTAB_4      equ 0x260
                     ; four words the side's tables go in, and the
                     ; copy's stage
 %1:
-        LAST    %%stock, %14
-        IF_PLAYER dword [esp + 4], %%wrap
+        cmp     dword [esp + 4], BS_OBJA
+        jne     %%stock
+        cmp     dword [boss], ZGRADT
+        jne     %%stock
+        call    zstill
+        cmp     dword [%14], LAST_STAGE
+        je      %%wrap
 %%stock:
         push    ebp
         mov     ebp, esp
@@ -4528,7 +4566,7 @@ pullh:  dd      0
 was:    dd      0                   ; on the select last frame
 boss:   dd      0                   ; the player's boss in one player, or 0
 bsrc:   dd      0                   ; the machine whose colours it wears
-bcolor: dd      0                   ; that machine's colour, 0 its own
+bcolor: dd      0                   ; that machine's colour, one on, 0 its own
 bside:  dd      0                   ; and the array it came from
 sel_step: dd    30.0                ; to a boss in the lineup, and on
 sel_bstep: dd   1.5                 ; the camera's step a frame to one
@@ -4751,6 +4789,7 @@ selzvar: times SEL_ZBONES dw 0      ; every part as undamaged
 selzout: times 0x400 db 0           ; the pose's draw's output
         align   4, db 0
 selrow: times SEL_ROWW * 8 dw 0
+selrow_quick: dd 0                  ; the quick select up as it was made
         align   4, db 0
 selrows: times 10 * SEL_ROWS db 0
         align   4, db 0

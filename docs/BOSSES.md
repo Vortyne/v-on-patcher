@@ -50,8 +50,9 @@ unpatched game never reads it.
   to the end of the row and the extra colours.
 - The bosses are lit in their own colours like the eight, and the
   widescreen hangar fades them at the right edge as it does the others.
-- **Machine Color Select**: up and down on a boss cycle it through the
-  same eight colours the others have, any of which it can wear.
+- **Machine Color Select**: up and down on a boss cycle it through its
+  own colours and the eight colours of each of the others, any of which it
+  can wear.
 - Each boss launches from the hangar: Jaguarandi on Raiden's launch animation,
   Z-Gradt lifting off the lip and out through the tunnel. The water, the
   splash and every machine's thrust keep their own colours throughout.
@@ -79,6 +80,8 @@ unpatched game never reads it.
   land before the round starts, 600 frames at the most;
   on the last stage, where the CPU's Z-Gradt flies in instead, the round
   starts as it always did.
+- Z-Gradt stands still while its super laser is out, as the CPU's does;
+  the levers move it again once the laser is gone.
 - Z-Gradt has no jump. The jump - both levers out, or the jump key - turns
   it to face the opponent instead, a half turn in 64 frames, the
   camera with it; not while its super laser is out.
@@ -103,7 +106,10 @@ unpatched game never reads it.
 
 - One player only, by design: the bosses are far stronger than the eight,
   so two-player and internet play keep the select to the eight for a fair
-  fight, and nothing here runs there.
+  fight, and nothing here runs there. The bosses do not stand in the
+  two-player hangar.
+- The Quick VR Select, the game's option, shows the eight only: it has no
+  backdrop art for a boss. Turn it off to play one.
 - The bosses' weapons have no ammo to speak of, as the game's own code
   has them: Z-Gradt's shots are made outside the charge counting, so its
   three gauges stay full, and Jaguarandi's refill faster than it can fire.
