@@ -2182,6 +2182,24 @@ seltitlex:
         SELMARK selframe1, BS_PLANE + 0x8
         SELMARK selframe2, BS_PLANE + 0x10
 
+; The marks' row is cleared before they are drawn each frame, 62 tiles
+; from the row's start (0x1f dwords), in the hangar and in the quick
+; select. The shift puts the first portrait's mark before the start, so
+; once drawn it stayed: a 1P on Temjin after the select started there. The
+; clear starts the shift earlier and goes twice that further, past the
+; tenth portrait's marks. In place of `mov dword [ebp-8], 0x1f` in each,
+; two nops after; [ebp-4] the start.
+selclr_a:
+        push    eax
+        call    selshift            ; in tiles
+        add     eax, eax
+        sub     [ebp - 4], eax      ; two bytes each, back
+        shr     eax, 1              ; and as many dwords on: the tenth
+        add     eax, 0x1f           ; portrait's 2P mark is the furthest
+        mov     [ebp - 8], eax
+        pop     eax
+        ret
+
 ; The select's countdown, seconds left = (SEL_TIME - frames) / 60 - 1:
 ; SEL_MORE seconds longer with a boss unlocked, in one player, for the
 ; walk to it and its colours. In place of `mov eax, SEL_TIME`.

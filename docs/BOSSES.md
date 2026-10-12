@@ -266,6 +266,10 @@ with the texture bank the fights had loaded reloaded.
 - **The Quick VR Select** - its own cursor limit, colour select and hiding
   before a launch go to the hangar's hooks, and its texts for a boss to
   `selqinfo_a`, over the ones it writes for no machine.
+- **The 1P and 2P marks** - the row they sit on is cleared before they
+  are drawn, 62 tiles from its start; with the row shifted the clear
+  starts the shift earlier and goes that much further (`selclr_a`), or a
+  mark on the first portrait stayed.
 - **Z-Gradt's death** - it darkens through palette events 0x401 to 0x43f,
   which the handler takes to be the CPU's; the player's are passed over
   (`zdark_a`, `zfade_a`).
