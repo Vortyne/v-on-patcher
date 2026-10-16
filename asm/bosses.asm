@@ -147,6 +147,7 @@ extern BS_FCLOSE
 extern BS_PALLOADA              ; A's palette load (slot, palette)
 extern BS_PALRAMA               ; and A's palettes
 extern BS_POLYCOL               ; the polygon being queued's light
+extern BS_KEYA                  ; the polygon's depth key, as the mesh draw keeps it
 extern BS_COLTAB                ; the polygons' colours, a row a plane
 extern BS_SELOBJ                ; the scene's objects
 extern BS_SELCAM                ; the scene camera's place, as the hangar
@@ -4492,6 +4493,45 @@ zring_a:
         mov     eax, [zl_prev]
         mov     [edx + RING_FLAGS + 8], eax
         popad
+        ret
+
+; --- Jaguarandi's red segments ---------------------------------------------
+
+; The renderer draws a frame's polygons nearest first, each keeping the
+; pixels it covers, in the order of a key a polygon: the depth of its
+; nearest vertex, in buckets 1/256th of the depth wide; in a bucket the
+; polygon queued later is drawn first. Jaguarandi's red segments, on its
+; legs and back, are the polygons of its luminous light group (bits 18 to
+; 22 of a polygon's flags, 0), each in the plane of a face of a
+; neighbouring part. The two land in one bucket or the other's as the
+; legs move, so the segment shows and goes a frame at a time, and stays
+; gone as a turn holds the face nearer; the CPU's, far off, stays in the
+; one bucket. Sorted to the far end, the segments vanish behind the
+; body, and nothing else changes (seen). The eight use the group too, so
+; only Jaguarandi's are moved: a polygon within its file, in the slot
+; the loader gives it (BS_SLOTS, its size in BS_RBNAMES), where the
+; select puts its own copy as it draws (sel_slotsin). In place of the
+; key's store in the mesh draw's four-sided path, wherever a mesh is
+; drawn: a luminous polygon of Jaguarandi's has its key one bucket
+; nearer. [ebp+0x10] is the polygon in its mesh, past its flags; a key
+; is a float's bits, a bucket 0x8000 of them.
+LUMINOUS    equ 0                   ; the light group
+KEY_BUCKET  equ 0x8000
+jlum_a:
+        push    edx
+        mov     edx, [ebp + 0x10]
+        sub     edx, [BS_SLOTS + SEL_JAGFILE * 4] ; its place in the file,
+        cmp     edx, [BS_RBNAMES + SEL_JAGFILE * 8 + 4] ; if in it (no file:
+        jae     .store              ; nothing is)
+        mov     edx, [ebp + 0x10]
+        mov     edx, [edx - 4]      ; the polygon's flags
+        shr     edx, 18
+        and     edx, 0x1f
+        cmp     edx, LUMINOUS
+        jne     .store
+        sub     eax, KEY_BUCKET
+.store: pop     edx
+        mov     [BS_KEYA], eax      ; the displaced instruction
         ret
 
 ; --- the replay and the win and lose screens -----------------------------

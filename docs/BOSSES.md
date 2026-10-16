@@ -76,6 +76,9 @@ unpatched game never reads it.
   Neither closes in as the opponent comes near, and Z-Gradt's never
   levels out below its high angle as it turns on the spot; it turns with
   Z-Gradt.
+- Jaguarandi's red segments, on its legs and back, stay in view. The
+  game's own draw let the faces beside them cover them at some depths,
+  so they flickered as it walked and went out as it turned.
 - Z-Gradt's fly-in starts part of the way in rather than from beyond the
   arena's backdrop: indoors (Deathtrap, the Spaceport, the Secret Base) it
   only drops into place, and outdoors it comes in from 784 units out,
@@ -147,7 +150,7 @@ when the box is ticked, so unticked it leaves the executable as the other
 patches alone would. Its buffers - the bosses' motions, the model and AI
 copies, the replay's ring, the saved palettes and the rest, 263,181
 bytes - are gathered at its end, and the file carries the blob only as
-far as its last byte that is not zero, 15,755 bytes; the rest is the
+far as its last byte that is not zero, 15,803 bytes; the rest is the
 section's virtual size, which Windows zeroes at load (`OWN_SECTIONS`).
 
 ### The select's row
@@ -279,6 +282,16 @@ with the texture bank the fights had loaded reloaded.
   laser. `zring_a` keeps those globals, the player's bank and the lock-on
   in a ring of its own, filled and read in step with the game's, at the
   twelve places object A is copied to or from the ring.
+- **Jaguarandi's red segments** - the renderer draws a frame's polygons
+  nearest first, each keeping the pixels it covers, by a key a polygon:
+  the depth of its nearest vertex, in buckets 1/256th of the depth wide,
+  and in a bucket the polygon queued later is drawn first. The segments
+  are the model's luminous light group, each in the plane of a face of a
+  neighbouring part, and the two swap buckets as the legs move. `jlum_a`,
+  at the mesh draw's store of the key, moves a luminous polygon's one
+  bucket nearer when the polygon lies in Jaguarandi's file, found through
+  the loader's slot table wherever the file is, the select's own copy
+  included; the eight use the group too and are left alone.
 - **The Quick VR Select** - its own cursor limit, colour select and hiding
   before a launch go to the hangar's hooks, and its texts for a boss to
   `selqinfo_a`, over the ones it writes for no machine.
