@@ -3941,6 +3941,39 @@ zlevers_a:
         jl      BS_LEVERSA
         jmp     BS_NOLEVERSA
 
+; Z-Gradt's super laser goes on the guard gesture, both levers pulled in
+; (0x602), which the lever decode counts into the byte at +0x13b, 0xff
+; once the gesture has been held: the tick's trigger reads it, with no
+; laser under way (its state -1), and starts the laser as weapon 6. On
+; the pad that gesture is the Guard bind. The player's Z-Gradt fires it
+; on Dash instead: Z-Gradt has no dash, so the bind is free, and a button
+; is more of a trigger than a gesture. Dash sets both turbo bits (the
+; game's slot 8, 0x02 in each lever), which the decode turns into the
+; bytes at +0x142 and +0x143 - 0xff on the frame a turbo goes down,
+; counting down while it is held, 0 up - so the laser fires on the press,
+; not the hold; on the twin-stick profile either turbo button does.
+; Guard then does nothing on the player's Z-Gradt. In place of the
+; trigger's load of the guard byte into ecx; ecx comes back as the
+; game's compare wants it, 0xff to fire.
+ZF_GUARD    equ 0x13b
+ZF_TURBOA   equ 0x142
+ZF_TURBOB   equ 0x143
+
+zfire_a:
+        mov     eax, [ebp + 8]
+        xor     ecx, ecx
+        cmp     eax, BS_OBJA
+        jne     .stock
+        cmp     dword [boss], ZGRADT
+        jne     .stock
+        mov     cl, [eax + ZF_TURBOB]
+        cmp     cl, 0xff
+        je      .done
+        mov     cl, [eax + ZF_TURBOA]
+        ret
+.stock: mov     cl, [eax + ZF_GUARD]
+.done:  ret
+
 ; Z-Gradt's moves ask its own floor query where the ground is at the place
 ; it moves to: a box 280 each way from the arena's middle, the moon gate's
 ; size, flat inside, a wall of 100000 outside with the wall's facing. On

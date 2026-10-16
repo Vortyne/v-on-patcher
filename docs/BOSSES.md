@@ -86,6 +86,10 @@ unpatched game never reads it.
 - Z-Gradt stands still while its super laser is out, as the CPU's does:
   the levers neither turn it nor walk it, and a walk under way stops. It
   moves again once the laser is gone.
+- Z-Gradt's super laser fires on Dash - on the twin-stick profile, either
+  turbo button - where the game had it on Guard, both levers pulled in.
+  Z-Gradt has no dash, so the button was free; Guard now does nothing on
+  it. It fires on the press, not while the button is held.
 - Z-Gradt has no jump. The jump - both levers out, or the jump key - turns
   it to face the opponent instead, a half turn in 64 frames, the
   camera with it; not while its super laser is out.
@@ -269,6 +273,10 @@ with the texture bank the fights had loaded reloaded.
   the player's laser out the read goes to `zlevers_a`, which puts them at
   rest the same way, so it neither turns nor walks; `zfloor_a` answers
   its moves with a wall meanwhile, so a walk under way stops where it is.
+- **Z-Gradt's super laser** - the trigger in its tick reads the guard
+  gesture's byte, 0xff once both levers have been held in. For the
+  player's it reads the two turbo bytes instead (`zfire_a`), 0xff on the
+  frame a turbo goes down, which the Dash bind sets both of.
 - **The Quick VR Select** - its own cursor limit, colour select and hiding
   before a launch go to the hangar's hooks, and its texts for a boss to
   `selqinfo_a`, over the ones it writes for no machine.
