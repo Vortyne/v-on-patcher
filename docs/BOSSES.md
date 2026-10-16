@@ -145,10 +145,10 @@ in one player only. The sections below follow the file.
 The blob has a section of its own, `.vobs`, that the patcher appends only
 when the box is ticked, so unticked it leaves the executable as the other
 patches alone would. Its buffers - the bosses' motions, the model and AI
-copies, the saved palettes and the rest, 233,385 bytes - are gathered at
-its end, and the file carries the blob only as far as its last byte that
-is not zero, 14,851 bytes; the rest is the section's virtual size, which Windows
-zeroes at load (`OWN_SECTIONS`).
+copies, the replay's ring, the saved palettes and the rest, 263,181
+bytes - are gathered at its end, and the file carries the blob only as
+far as its last byte that is not zero, 15,755 bytes; the rest is the
+section's virtual size, which Windows zeroes at load (`OWN_SECTIONS`).
 
 ### The select's row
 

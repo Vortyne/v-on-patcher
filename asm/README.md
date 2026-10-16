@@ -800,10 +800,12 @@ select models, posed from their fight models; the select's palettes,
 where a boss borrows two rows the select leaves alone; the portraits,
 marks and frame shifted left; the palette loaders; PLAYER DATA's
 turntable; the unlocks, their screen and `bosses.bin`; the round's
-animation loads; the ending; Z-Gradt's chase camera; Z-Gradt against
+animation loads; the ending; Z-Gradt's chase camera; the player's
+Z-Gradt - its fly-in, its laser's button, its floor - and Z-Gradt against
 Z-Gradt, where the player's gets its own model header and AI state;
-Z-Gradt's gold; the win and replay cameras. The data is at the end, the zeroed buffers last so
-the file carries none of them.
+Z-Gradt's gold; the KO replay's ring; the replay and the win and lose
+screens. The data is at the end, the zeroed buffers last so the file
+carries none of them.
 
 Every hook is player 1's copy of the fight machine's (`A` in the names,
 as [HIRES.md](../docs/HIRES.md) letters the renderers): the other copy's
@@ -811,7 +813,8 @@ tick is only called in the loop's two-player branch, and the bosses are
 one player only. Hooks that replace more than one instruction replay what
 they displaced, and the ones in code every machine runs - the polygon
 queue, load identity, the shadow draws - test `boss` first and fall
-through to the original otherwise.
+through to the original otherwise; the replay's ring alone keeps
+Z-Gradt's AI globals in every fight, whoever is in it.
 
 ## titlever.asm
 

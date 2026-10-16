@@ -3742,7 +3742,7 @@ zeye_a:
 .mul:   fmulp   st1, st0
         ret
 
-; --- Z-Gradt against Z-Gradt -----------------------------------------------
+; --- the player's Z-Gradt, and Z-Gradt against Z-Gradt --------------------
 
 ; Falls through when the player's Z-Gradt (`boss`) is on the last stage,
 ; stage %2, else jumps to %1.
