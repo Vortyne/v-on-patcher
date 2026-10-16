@@ -34,15 +34,15 @@ is stale, so the line numbers are current.
 | 2641–2783 | widescreen apply: `hires_install`, section append, F4 table | `def hires_install(buf, width` |
 | 2784–2880 | disc images table, `Build` class, annex order | `DISC_IMAGES = {` |
 | 2881–4412 | the four builds: symbols, caves, site maps | `RETAIL = Build('English reta` |
-| 4413–5757 | generated site maps for the other three builds (`tools/buildsites.py`) | `# SITES JPRE BEGIN` |
-| 5758–16242 | the blobs, `BLOBS`, and `link()` | `BLOBS = {` |
-| 16243–17021 | banner and credit bitmaps, tile expansion | `LEVERS_CODE = link('LEVERS',` |
-| 17022–18033 | the patch table: `FEATURES`, `BY_KEY`, labels, tips, apply order | `FEATURES = [` |
-| 18034–18881 | ripping (`RAW = 2352`) and installing (`LOGICAL = 2048`) | `# --- ripping --------------` |
-| 18882–19730 | netplay setup, `SYNC_SITES`, cnc-ddraw, CD audio | `# --- netplay --------------` |
-| 19731–20253 | `Patcher`: reading a file, applying, restoring | `class Patcher:` |
-| 20254–20821 | the logo and icon (`tools/assets.py`), then the window strings | `# ASSETS BLOB BEGIN - tools/` |
-| 20822–22853 | the window (`run_tk`), the CLI, `main` | `def run_tk():` |
+| 4413–5793 | generated site maps for the other three builds (`tools/buildsites.py`) | `# SITES JPRE BEGIN` |
+| 5794–17234 | the blobs, `BLOBS`, and `link()` | `BLOBS = {` |
+| 17235–18013 | banner and credit bitmaps, tile expansion | `LEVERS_CODE = link('LEVERS',` |
+| 18014–19040 | the patch table: `FEATURES`, `BY_KEY`, labels, tips, apply order | `FEATURES = [` |
+| 19041–19888 | ripping (`RAW = 2352`) and installing (`LOGICAL = 2048`) | `# --- ripping --------------` |
+| 19889–20737 | netplay setup, `SYNC_SITES`, cnc-ddraw, CD audio | `# --- netplay --------------` |
+| 20738–21260 | `Patcher`: reading a file, applying, restoring | `class Patcher:` |
+| 21261–21828 | the logo and icon (`tools/assets.py`), then the window strings | `# ASSETS BLOB BEGIN - tools/` |
+| 21829–23860 | the window (`run_tk`), the CLI, `main` | `def run_tk():` |
 <!-- REGIONS END -->
 
 ## 3. `v_on.exe`

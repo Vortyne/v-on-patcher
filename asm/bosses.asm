@@ -3929,13 +3929,25 @@ zready_a:
 ; stick was moved. While its laser is out (its state, BS_AILASER, 0 up;
 ; -1 otherwise; the live block its own through its tick, AI) its levers
 ; are put at rest as in the fly-in, so it neither turns nor walks, and a
-; walk under way stops as it does when the stick is let go. In place of
-; the call to BS_LEVERSA in A's tick; cdecl, (the object).
+; walk under way stops as it does when the stick is let go. Not on the
+; win and lose screen (A's state 0xc), where the decode feeds the winner
+; and the loser their poses in place of the pad, nor in the KO replay
+; (0x14), where it reads the recording: the laser's state stays up past a
+; laser KO, and the hold there left Z-Gradt without its win pose and the
+; screen without its call. In place of the call to BS_LEVERSA in A's
+; tick; cdecl, (the object).
+ST_WINLOSE  equ 0x0c
+ST_REPLAY   equ 0x14
+
 zlevers_a:
         cmp     dword [esp + 4], BS_OBJA
         jne     BS_LEVERSA
         cmp     dword [boss], ZGRADT
         jne     BS_LEVERSA
+        cmp     dword [BS_STATEA], ST_WINLOSE
+        je      BS_LEVERSA
+        cmp     dword [BS_STATEA], ST_REPLAY
+        je      BS_LEVERSA
         mov     eax, BS_BSSA
         cmp     dword [eax + BS_AILASER], 0
         jl      BS_LEVERSA
@@ -4468,6 +4480,73 @@ zswap:
         DARK    zdark_a, BS_ZDA5, BS_ZDA1, BS_ZRAX
         DARK    zfade_a, BS_ZFA5, BS_ZFA1, BS_ZRAX
 
+; --- the KO replay's ring ------------------------------------------------
+
+; The KO replay rewinds the fight: every fourth frame the game copies both
+; objects (0x600 bytes each) into a ring of 30 slots, and the replay puts
+; the slot from two seconds back over the objects and runs the recorded
+; levers on from there. Z-Gradt's super laser keeps its state outside the
+; object, in the AI globals from BS_BSSA (the laser's state, the gold
+; ramp, the draw's count), which the ring does not hold: rewound, the
+; object was two seconds behind its laser, so the replay's laser ran out
+; of step with its beams and particles, and a laser KO left the two out of
+; step through the screens after it. The patch keeps a ring of its own
+; beside the game's - the live block, the player's bank (AI, banked on the
+; last stage) and the lock-on's two words - filled and read in the same
+; slot at the same moment. In place of the `mov ecx, 0x180` before each
+; copy of object A to or from the game's ring, twelve sites: the ten
+; restores, the ring's fill at a round's start and the recorder. eax is
+; the slot's offset (the slot << 9); edi is the object on a restore and
+; the slot on a record.
+RING_N      equ 30
+RING_BANK   equ AI_STATE            ; the live block, then the bank, then
+RING_FLAGS  equ 2 * AI_STATE        ; banked_a, zl_on and zl_prev
+RING_SLOT   equ 2 * AI_STATE + 16
+
+zring_a:
+        mov     ecx, 0x180          ; the displaced instruction
+        pushad
+        mov     edx, eax
+        shr     edx, 9
+        imul    edx, edx, RING_SLOT
+        add     edx, zring
+        cld
+        cmp     edi, BS_OBJA
+        jne     .record
+        mov     esi, edx            ; a restore: the slot over the globals
+        mov     edi, BS_BSSA
+        mov     ecx, BS_AIDW
+        rep movsd
+        lea     esi, [edx + RING_BANK]
+        mov     edi, bank_a
+        mov     ecx, AI_STATE / 4
+        rep movsd
+        mov     eax, [edx + RING_FLAGS]
+        mov     [banked_a], eax
+        mov     eax, [edx + RING_FLAGS + 4]
+        mov     [zl_on], eax
+        mov     eax, [edx + RING_FLAGS + 8]
+        mov     [zl_prev], eax
+        popad
+        ret
+.record:
+        mov     edi, edx            ; a record: the globals into the slot
+        mov     esi, BS_BSSA
+        mov     ecx, BS_AIDW
+        rep movsd
+        lea     edi, [edx + RING_BANK]
+        mov     esi, bank_a
+        mov     ecx, AI_STATE / 4
+        rep movsd
+        mov     eax, [banked_a]
+        mov     [edx + RING_FLAGS], eax
+        mov     eax, [zl_on]
+        mov     [edx + RING_FLAGS + 4], eax
+        mov     eax, [zl_prev]
+        mov     [edx + RING_FLAGS + 8], eax
+        popad
+        ret
+
 ; --- the replay and the win and lose screens -----------------------------
 
 ; Both are framed for the eight, so a boss fills the screen. In a
@@ -4974,6 +5053,8 @@ copy_a: times MODEL_COPY db 0
 bank_a: times AI_STATE db 0
         align   4, db 0
 scratch_a: times AI_STATE db 0
+
+zring: times RING_N * RING_SLOT db 0  ; the KO replay's ring of the AI state
         align   4, db 0
 objsave: times OBJECT db 0
         align   4, db 0

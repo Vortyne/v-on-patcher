@@ -90,6 +90,9 @@ unpatched game never reads it.
   turbo button - where the game had it on Guard, both levers pulled in.
   Z-Gradt has no dash, so the button was free; Guard now does nothing on
   it. It fires on the press, not while the button is held.
+- The KO replay plays Z-Gradt's super laser as it was fired, its beams
+  and particles in step with the pose, and a laser KO goes on to the win
+  or lose screen, pose and call included, as any other KO does.
 - Z-Gradt has no jump. The jump - both levers out, or the jump key - turns
   it to face the opponent instead, a half turn in 64 frames, the
   camera with it; not while its super laser is out.
@@ -277,6 +280,13 @@ with the texture bank the fights had loaded reloaded.
   gesture's byte, 0xff once both levers have been held in. For the
   player's it reads the two turbo bytes instead (`zfire_a`), 0xff on the
   frame a turbo goes down, which the Dash bind sets both of.
+- **The KO replay** - the game copies both objects into a ring of 30
+  slots every fourth frame, and the replay rewinds them from it and runs
+  the recorded levers on. Z-Gradt's laser keeps its state in the AI
+  globals, outside the object, so rewound, the object was behind its
+  laser. `zring_a` keeps those globals, the player's bank and the lock-on
+  in a ring of its own, filled and read in step with the game's, at the
+  twelve places object A is copied to or from the ring.
 - **The Quick VR Select** - its own cursor limit, colour select and hiding
   before a launch go to the hangar's hooks, and its texts for a boss to
   `selqinfo_a`, over the ones it writes for no machine.
