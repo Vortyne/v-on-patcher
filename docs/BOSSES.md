@@ -83,9 +83,6 @@ unpatched game never reads it.
   land before the round starts, 600 frames at the most;
   on the last stage, where the CPU's Z-Gradt flies in instead, the round
   starts as it always did.
-- Z-Gradt stands still while its super laser is out, as the CPU's does:
-  the levers neither turn it nor walk it, and a walk under way stops. It
-  moves again once the laser is gone.
 - Z-Gradt's super laser fires on Dash - on the twin-stick profile, either
   turbo button - where the game had it on Guard, both levers pulled in.
   Z-Gradt has no dash, so the button was free; Guard now does nothing on
@@ -271,11 +268,6 @@ with the texture bank the fights had loaded reloaded.
   under it comes back as a wall facing the way it moves, and a smaller
   one as its height now plus the rise, so it never sticks on a floor it
   landed below.
-- **Z-Gradt's levers** - its tick reads them once a frame into the words
-  its moves go by, and puts them at rest instead while it flies in. With
-  the player's laser out the read goes to `zlevers_a`, which puts them at
-  rest the same way, so it neither turns nor walks; `zfloor_a` answers
-  its moves with a wall meanwhile, so a walk under way stops where it is.
 - **Z-Gradt's super laser** - the trigger in its tick reads the guard
   gesture's byte, 0xff once both levers have been held in. For the
   player's it reads the two turbo bytes instead (`zfire_a`), 0xff on the

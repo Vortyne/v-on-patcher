@@ -243,9 +243,6 @@ extern BS_RCOUNTA                ; A's frames left in a state
 extern BS_ARENA                  ; the arena loaded, 0 to 9
 extern BS_ZBOXA                 ; Z-Gradt's own floor query, the moon
 extern BS_FLOORA                ; gate's box; and the arena's, the eight's
-extern BS_LEVERSA               ; its tick's read of its levers from the
-extern BS_NOLEVERSA             ; pad bank, and the one that puts them at
-                                ; rest, as its fly-in does
 extern BS_TM2                   ; two timer locks: resume and skip each
 extern BS_TM2S
 extern BS_TM4
@@ -3920,39 +3917,6 @@ zready_a:
         cmp     dword [BS_RCOUNTA], 0
         ret
 
-; Z-Gradt's tick reads its levers once a frame into the words its moves
-; go by - the direction at +0x102, the turn at +0x10e - from the pad bank
-; (BS_LEVERSA); while it flies in it puts them at rest instead
-; (BS_NOLEVERSA), and Z-Gradt stands. The CPU's Z-Gradt stands still with
-; its super laser out, which fires along its facing; the player's turned
-; and walked on the spot, held where it was by zfloor_a, as long as the
-; stick was moved. While its laser is out (its state, BS_AILASER, 0 up;
-; -1 otherwise; the live block its own through its tick, AI) its levers
-; are put at rest as in the fly-in, so it neither turns nor walks, and a
-; walk under way stops as it does when the stick is let go. Not on the
-; win and lose screen (A's state 0xc), where the decode feeds the winner
-; and the loser their poses in place of the pad, nor in the KO replay
-; (0x14), where it reads the recording: the laser's state stays up past a
-; laser KO, and the hold there left Z-Gradt without its win pose and the
-; screen without its call. In place of the call to BS_LEVERSA in A's
-; tick; cdecl, (the object).
-ST_WINLOSE  equ 0x0c
-ST_REPLAY   equ 0x14
-
-zlevers_a:
-        cmp     dword [esp + 4], BS_OBJA
-        jne     BS_LEVERSA
-        cmp     dword [boss], ZGRADT
-        jne     BS_LEVERSA
-        cmp     dword [BS_STATEA], ST_WINLOSE
-        je      BS_LEVERSA
-        cmp     dword [BS_STATEA], ST_REPLAY
-        je      BS_LEVERSA
-        mov     eax, BS_BSSA
-        cmp     dword [eax + BS_AILASER], 0
-        jl      BS_LEVERSA
-        jmp     BS_NOLEVERSA
-
 ; Z-Gradt's super laser goes on the guard gesture, both levers pulled in
 ; (0x602), which the lever decode counts into the byte at +0x13b, 0xff
 ; once the gesture has been held: the tick's trigger reads it, with no
@@ -3996,25 +3960,8 @@ zfire_a:
 ; moves, a smaller one taken, its height following the ground. In place
 ; of the three calls to its own query; cdecl, (the object, x, z, the
 ; facing's word), the height in st0.
-;
-; Z-Gradt's super laser fires along its facing, and the CPU's stands
-; still for it; the player's stick moved it as it fired. While the
-; player's laser is out (its state, BS_AILASER, 0 up; -1 otherwise) every
-; place it would move to is a wall, so its code stops it as at an
-; arena's edge.
 zfloor_a:
-        cmp     dword [esp + 4], BS_OBJA
-        jne     .arena
-        cmp     dword [boss], ZGRADT
-        jne     .arena
-        mov     eax, BS_BSSA
-        cmp     dword [eax + BS_AILASER], 0
-        jl      .arena
-        mov     eax, [esp + 0x10]   ; the laser out: a wall, facing it
-        mov     word [eax], 0
-        fld     dword [zfl_far]
-        ret
-.arena: cmp     dword [BS_ARENA], ARENA_MOON
+        cmp     dword [BS_ARENA], ARENA_MOON
         je      BS_ZBOXA            ; its own box there, the args as they are
         push    ebp
         mov     ebp, esp
@@ -4791,7 +4738,6 @@ zf_start: dd    100, 199, 100, 60, 100, 199, 100, 100, 100, 199 ; the
                                     ; Air, Fact, Water, Fore, Inka, Dock,
                                     ; Moon, Tro, Fld, Core
 zfl_wall: dd    1000.0              ; the arena's floor at a wall, and over
-zfl_far: dd     100000.0            ; its own query's wall
 zfl_step: dd    4.0                 ; the rise Z-Gradt's moves take, its own
 win_z:  dd      4.0                 ; win and lose: the subject's distance
 win_jag: dd     2.0                 ; times this
