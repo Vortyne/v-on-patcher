@@ -83,8 +83,9 @@ unpatched game never reads it.
   land before the round starts, 600 frames at the most;
   on the last stage, where the CPU's Z-Gradt flies in instead, the round
   starts as it always did.
-- Z-Gradt stands still while its super laser is out, as the CPU's does;
-  it moves again once the laser is gone.
+- Z-Gradt stands still while its super laser is out, as the CPU's does:
+  the levers neither turn it nor walk it, and a walk under way stops. It
+  moves again once the laser is gone.
 - Z-Gradt has no jump. The jump - both levers out, or the jump key - turns
   it to face the opponent instead, a half turn in 64 frames, the
   camera with it; not while its super laser is out.
@@ -263,6 +264,11 @@ with the texture bank the fights had loaded reloaded.
   under it comes back as a wall facing the way it moves, and a smaller
   one as its height now plus the rise, so it never sticks on a floor it
   landed below.
+- **Z-Gradt's levers** - its tick reads them once a frame into the words
+  its moves go by, and puts them at rest instead while it flies in. With
+  the player's laser out the read goes to `zlevers_a`, which puts them at
+  rest the same way, so it neither turns nor walks; `zfloor_a` answers
+  its moves with a wall meanwhile, so a walk under way stops where it is.
 - **The Quick VR Select** - its own cursor limit, colour select and hiding
   before a launch go to the hangar's hooks, and its texts for a boss to
   `selqinfo_a`, over the ones it writes for no machine.

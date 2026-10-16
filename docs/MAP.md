@@ -33,16 +33,16 @@ is stale, so the line numbers are current.
 | 39–2640 | widescreen: the layouts, `UI_CODE`, the port tables, the site builder | `# The resolution patch: the` |
 | 2641–2783 | widescreen apply: `hires_install`, section append, F4 table | `def hires_install(buf, width` |
 | 2784–2880 | disc images table, `Build` class, annex order | `DISC_IMAGES = {` |
-| 2881–4404 | the four builds: symbols, caves, site maps | `RETAIL = Build('English reta` |
-| 4405–5743 | generated site maps for the other three builds (`tools/buildsites.py`) | `# SITES JPRE BEGIN` |
-| 5744–16213 | the blobs, `BLOBS`, and `link()` | `BLOBS = {` |
-| 16214–16992 | banner and credit bitmaps, tile expansion | `LEVERS_CODE = link('LEVERS',` |
-| 16993–17998 | the patch table: `FEATURES`, `BY_KEY`, labels, tips, apply order | `FEATURES = [` |
-| 17999–18846 | ripping (`RAW = 2352`) and installing (`LOGICAL = 2048`) | `# --- ripping --------------` |
-| 18847–19695 | netplay setup, `SYNC_SITES`, cnc-ddraw, CD audio | `# --- netplay --------------` |
-| 19696–20218 | `Patcher`: reading a file, applying, restoring | `class Patcher:` |
-| 20219–20786 | the logo and icon (`tools/assets.py`), then the window strings | `# ASSETS BLOB BEGIN - tools/` |
-| 20787–22818 | the window (`run_tk`), the CLI, `main` | `def run_tk():` |
+| 2881–4412 | the four builds: symbols, caves, site maps | `RETAIL = Build('English reta` |
+| 4413–5754 | generated site maps for the other three builds (`tools/buildsites.py`) | `# SITES JPRE BEGIN` |
+| 5755–16235 | the blobs, `BLOBS`, and `link()` | `BLOBS = {` |
+| 16236–17014 | banner and credit bitmaps, tile expansion | `LEVERS_CODE = link('LEVERS',` |
+| 17015–18023 | the patch table: `FEATURES`, `BY_KEY`, labels, tips, apply order | `FEATURES = [` |
+| 18024–18871 | ripping (`RAW = 2352`) and installing (`LOGICAL = 2048`) | `# --- ripping --------------` |
+| 18872–19720 | netplay setup, `SYNC_SITES`, cnc-ddraw, CD audio | `# --- netplay --------------` |
+| 19721–20243 | `Patcher`: reading a file, applying, restoring | `class Patcher:` |
+| 20244–20811 | the logo and icon (`tools/assets.py`), then the window strings | `# ASSETS BLOB BEGIN - tools/` |
+| 20812–22843 | the window (`run_tk`), the CLI, `main` | `def run_tk():` |
 <!-- REGIONS END -->
 
 ## 3. `v_on.exe`
