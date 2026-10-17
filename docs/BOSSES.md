@@ -125,11 +125,21 @@ unpatched game never reads it.
   has them: Z-Gradt's shots are made outside the charge counting, so its
   three gauges stay full, and Jaguarandi's refill faster than it can fire.
 - Z-Gradt's super laser has a gauge of its own, a fourth strip under the
-  three, named LASER CANNON as the hangar names it: full while the laser
-  is ready, red and draining as the beam fires, refilling as the cannon
-  folds away. Dash pressed while it is out gets what a weapon's button
-  gets on an empty gauge: CHARGING over the name, the refusal sound,
-  the bar swollen for a moment.
+  three, named CANNON (the hangar's LASER CANNON). It fills as the
+  game's bars fill: a shot takes its cost off the bar as it leaves the
+  machine, not on the press, and the bar climbs back a step a frame.
+  The laser's shot is the beam, so the bar empties as the beam fires
+  and is back, and blue again, as the cannon finishes folding away.
+  While the cannon deploys and charges the bar is drawn as the game
+  draws a close-combat weapon's bar with the opponent in reach: full,
+  in its third colour, pulsing in height. Dash held while
+  the bar is empty gets what a weapon's button gets on an empty gauge:
+  CHARGING over the name, the refusal sound once, the bar swollen until
+  half a second after the button is up. The press that fired it gets
+  the same if it is still held when the beam fires.
+- Z-Gradt's three strips, which stay full because the game does not
+  count its shots, turn to the live colour while their button is held,
+  so a press has a tell.
 - `bosses.bin` is written beside the game when a boss is unlocked. Where
   the folder cannot be written, the unlock screen still shows but the
   unlock is lost at exit.
@@ -137,6 +147,11 @@ unpatched game never reads it.
   blocks of the patch's own when the select first draws each. If a read
   fails, that boss is drawn from whatever the model pool holds in its
   slot, until a fight loads it.
+- A boss keeps its colours through a continue. The select used to draw
+  from the game's own copy of the model when a fight had loaded it, and
+  its recolouring of the polygons for the hangar stayed in that copy, so
+  after a continue Z-Gradt's turrets, ring and leg caps came out in other
+  machines' colours until a new run reloaded the file.
 
 ## How it works
 
@@ -155,9 +170,9 @@ in one player only. The sections below follow the file.
 The blob has a section of its own, `.vobs`, that the patcher appends only
 when the box is ticked, so unticked it leaves the executable as the other
 patches alone would. Its buffers - the bosses' motions, the model and AI
-copies, the replay's ring, the saved palettes and the rest, 263,213
+copies, the replay's ring, the saved palettes and the rest, 263,217
 bytes - are gathered at its end, and the file carries the blob only as
-far as its last byte that is not zero, 16,375 bytes; the rest is the
+far as its last byte that is not zero, 16,583 bytes; the rest is the
 section's virtual size, which Windows zeroes at load (`OWN_SECTIONS`).
 
 ### The select's row
@@ -173,9 +188,12 @@ The bosses' models are their fight models posed by the select's motions:
 Jaguarandi through Raiden's, with its head put back on, and Z-Gradt in its
 stance's first frame. Each file is read once into a block of its own
 (`sel_loadrb`), and the game's model slot points there only while the boss
-is drawn (`sel_slotsin`, `sel_slotsout`). They are not appended to the
-game's 8 MB model pool: after a full game that runs into the C runtime's
-heap.
+is drawn (`sel_slotsin`, `sel_slotsout`), the game's own pointer kept and
+put back. They are not appended to the game's 8 MB model pool: after a
+full game that runs into the C runtime's heap. The game's own copy of the
+file, present on a continue's select, is never drawn here: `selcol` turns
+the colour words of the polygons it draws to the select's rows and never
+back, and the game fights on with its copy.
 
 The portraits are `assets/portrait_jaguarandi.png` and
 `assets/portrait_z-gradt.png`, 48 by 64 and framed like the eight's,
@@ -293,13 +311,26 @@ with the texture bank the fights had loaded reloaded.
   one routine from the HUD pass, each a bar quad on the matrix scaled by
   its fill, with its name in tiles. `zgauge_a`, at that routine's end,
   stands a fourth at the middle strip's column one row down, filled from
-  the laser's state: full before the cannon fires, draining over the
-  beam's frames while the state holds at firing, refilling through the
-  fold, in the bars' colour when ready and red otherwise. While both
-  turbo bytes are down on the laser out, it puts the strips' CHARGING
+  the laser's state as a strip fills from its weapon's heat word. A
+  weapon's shot adds its cost to the heat on the frame its motion
+  launches the shot, the heat runs down one a frame, and the bar is the
+  heat's shortfall from the weapon's maximum in whole percent, ready
+  while a shot's cost fits; the laser's shot launches at its beam, state
+  0x104, and its cost is the rest of the cycle, 261 frames to idle, so
+  the bar is the frames since the beam as a percent, red until idle.
+  Through the deploy and the charge it is drawn as the strips draw a
+  bar whose ready byte has bit 2, a close-combat weapon with the
+  opponent in its reach: full, in the third material, its height 6 plus
+  3 sin (frame << 12) in place of 5, and ready. While both
+  turbo bytes are down with the bar not ready, it puts the strips' CHARGING
   block over the name through the game's own routine for the three,
   plays the refusal sound once per press and swells the bar for thirty
   frames; with the button up it clears the block and prints the name.
+- **Z-Gradt's strips** - `zbar_ra`, `zbar_la` and `zbar_ba`, in place of
+  each strip's push of the ready material before its draw, push the live
+  material instead while the weapon's button byte (+0x138, +0x139,
+  +0x13a; nonzero while the button is down) is set on the player's
+  Z-Gradt.
 - **Jaguarandi's red segments** - the renderer draws a frame's polygons
   nearest first, each keeping the pixels it covers, by a key a polygon:
   the depth of its nearest vertex, in buckets 1/256th of the depth wide,

@@ -161,6 +161,7 @@ extern BS_BARONA                ; its materials, a weapon's and the red of one
 extern BS_BARREDA               ; not ready
 extern BS_CHARGEA               ; the strips' CHARGING block at the cursor (1), or
                                 ; its rows cleared (0)
+extern BS_BARLIVEA              ; and a live bar's, full and pulsing in height
 extern BS_ROTXA                 ; turn it about x (the angle)
 extern BS_POSEA                 ; a fight model posed by a motion
 extern BS_ROTYA                 ; turn the matrix about y (the angle)
@@ -1832,18 +1833,19 @@ selcur:
 
 ; A boss's fight model, for drawing it outside a fight. Its meshes are
 ; found through the file slot its name has (SEL_JAGFILE, SEL_ZFILE), the
-; game's loader putting files one after another in an 8 MB pool; the
-; game's own copy is used when it has one. Otherwise the file is read once
-; into a block of its own (sel_loadrb), and the slot points there only
-; while a boss is drawn (sel_slotsin, sel_slotsout): appended to the pool,
-; it could run past its end into what follows - the C library's heap
-; list, at the select after a game's end.
+; game's loader putting files one after another in an 8 MB pool. The file
+; is read once into a block of its own (sel_loadrb), and the slot points
+; there only while a boss is drawn (sel_slotsin, sel_slotsout), the
+; game's own pointer kept and put back: appended to the pool, it could
+; run past its end into what follows - the C library's heap list, at the
+; select after a game's end. The game's own copy, when it has one (a
+; continue's select, after a fight as the boss), is never drawn here:
+; selcol turns the colour words of the meshes it draws to the select's
+; rows and never back, and the game fights on with the copy it has.
 ; eax the file slot, which is also its name's place.
 sel_loadrb:
         pushad
         mov     ebp, eax
-        cmp     dword [BS_SLOTS + ebp * 4], 0
-        jne     .out                ; the game's copy
         cmp     byte [sel_rbtry + ebp], 0
         jne     .out                ; or ours, read already (or tried)
         mov     byte [sel_rbtry + ebp], 1
@@ -1879,7 +1881,7 @@ sel_loadrb:
 .out:   popad
         ret
 
-; Both bosses' slots to their blocks where the game has no copy, and back.
+; Both bosses' slots to their blocks, the game's pointers kept, and back.
 sel_slotsin:
         pushad
 %assign k 0
@@ -1889,11 +1891,13 @@ sel_slotsin:
   %else
     %define SLOT SEL_JAGFILE
   %endif
-        cmp     dword [BS_SLOTS + SLOT * 4], 0
+        cmp     byte [sel_rbin + k], 0
         jne     .k%[k]
         mov     eax, [sel_rbbuf + SLOT * 4]
         test    eax, eax
         jz      .k%[k]
+        push    dword [BS_SLOTS + SLOT * 4]
+        pop     dword [sel_rbsave + k * 4]
         mov     [BS_SLOTS + SLOT * 4], eax
         mov     byte [sel_rbin + k], 1
 .k%[k]:
@@ -1907,11 +1911,13 @@ sel_slotsout:
         cmp     byte [sel_rbin], 0
         je      .z
         mov     byte [sel_rbin], 0
-        mov     dword [BS_SLOTS + SEL_JAGFILE * 4], 0
+        push    dword [sel_rbsave]
+        pop     dword [BS_SLOTS + SEL_JAGFILE * 4]
 .z:     cmp     byte [sel_rbin + 1], 0
         je      .out
         mov     byte [sel_rbin + 1], 0
-        mov     dword [BS_SLOTS + SEL_ZFILE * 4], 0
+        push    dword [sel_rbsave + 4]
+        pop     dword [BS_SLOTS + SEL_ZFILE * 4]
 .out:   ret
 
 ; In place of the calls to the select's text for the cursor (cdecl, the
@@ -4558,10 +4564,20 @@ jlum_a:
 ; and 0.16, each 80 wide, so the group is centred and the middle one is
 ; the centre. The player's Z-Gradt gets a fourth under them, at the
 ; middle one's x and seven tile rows down, clear of the block: its super
-; laser, LASER CANNON as the hangar names it, full and in the bars' colour
-; while the laser is ready, red and draining as the beam fires (ZG_BEAM
-; frames at state 0x104, counted here), refilling as the cannon folds
-; away (states 0x105 to 0x208); its button is Dash, both turbos down
+; laser, CANNON (the strips fit ten letters), filled as a strip fills
+; from its weapon's heat: a weapon's shot adds its cost to the heat on
+; the frame its motion launches the shot (Temjin's rifle at its motion's
+; frame 0x12), not on the press; the heat runs down one a frame, and
+; the bar is the heat's shortfall from the weapon's maximum in whole
+; percent, ready while a shot's cost still fits. The laser launches its
+; beam at state ZL_FIRING, after the cannon's deploy and charge, and its
+; cost is the rest of its cycle, to idle (-1 at ZL_IDLE): the bar empties
+; as the beam fires, red, and climbs back a percent at a time to full as
+; the cannon finishes folding away. Through the deploy and the charge it
+; is drawn as the strips draw a close-combat weapon's bar with the
+; opponent in its reach (the ready byte's bit 2): full, in a third
+; material, its height 6 + 3 sin (frame << 12) in place of 5, and ready,
+; so the button shows nothing; its button is Dash, both turbos down
 ; (the turbo bytes, 0xff as one goes down and counting down to 1 while
 ; held). The laser's state is read as zlock reads it, from the live block
 ; or the player's bank. In place of the strips' epilogue (pop edi, esi,
@@ -4573,12 +4589,10 @@ ZG_Y        equ 0xbe5c28f6          ; -0.215: the strips' row and seven tile
 ZG_COL      equ 0x1a                ; the name, as the middle strip's
 ZG_ROW      equ 0x27                ; seven under the names'
 ZG_BLOCK    equ 4                   ; the CHARGING block starts this far up
-ZG_BEAM     equ 0x78                ; the beam's frames
 ZG_SWELL    equ 0x1e                ; the bar's, after a press on it
 ZG_REFUSED  equ 0x8e                ; the sound
-ZL_FIRING   equ 0x104
-ZL_FOLD     equ 0x105               ; the fold, to ZL_IDLE
-ZL_IDLE     equ 0x209
+ZL_FIRING   equ 0x104               ; the beam's first frame, and
+ZL_IDLE     equ 0x209               ; -1 again at this
 zgauge_a:
         cmp     dword [ebp - 4], 0
         je      .out
@@ -4607,7 +4621,7 @@ zgauge_a:
         call    BS_MSCALEA
         add     esp, 12
         push    0x3f800000
-        push    0x40a00000          ; 5.0, the bar's half height
+        push    dword [zg_h]        ; 5.0, the bar's half height, or the pulse
         push    dword [zg_width]
         call    BS_MSCALEA
         add     esp, 12
@@ -4650,7 +4664,8 @@ zgauge_a:
         leave
         ret
 
-; st0 the fill, 0 to 1; zg_mat the bar's material.
+; st0 the fill, 0 to 1; zg_mat the bar's material, zg_h its half height
+; and zg_ready whether the button is answered.
 zg_fill:
         mov     ecx, BS_BSSA
         cmp     dword [banked_a], 0
@@ -4658,40 +4673,56 @@ zg_fill:
         mov     ecx, bank_a
 .live:  mov     ecx, [ecx + BS_AILASER]
         mov     dword [zg_mat], BS_BARREDA
+        mov     dword [zg_h], 0x40a00000
+        mov     dword [zg_ready], 0
+        cmp     ecx, 0
+        jl      .full               ; idle
         cmp     ecx, ZL_FIRING
-        je      .beam
-        mov     dword [zg_beam], 0
-        cmp     ecx, ZL_FOLD
-        jl      .full               ; idle, or the cannon coming out
+        jl      .prep               ; deploying or charging: live
         cmp     ecx, ZL_IDLE
         jge     .full
-        sub     ecx, ZL_FOLD        ; folding: filling again
-        mov     [zg_tmp], ecx
+        sub     ecx, ZL_FIRING - 1  ; firing or folding: (frames since the
+        imul    ecx, 100            ; beam + 1) * 100 / the rest of the
+        xor     edx, edx            ; cycle, whole percent, as the gauge
+        mov     eax, ecx            ; word
+        mov     ecx, ZL_IDLE - ZL_FIRING
+        div     ecx
+        mov     [zg_tmp], eax
         fild    dword [zg_tmp]
-        fdiv    dword [zg_fold]
+        fdiv    dword [zg_cent]
         ret
-.beam:  mov     ecx, [zg_beam]
-        cmp     ecx, ZG_BEAM
-        jae     .empty
-        inc     dword [zg_beam]
-        mov     [zg_tmp], ecx
-        fild    dword [zg_tmp]
-        fdiv    dword [zg_beamf]
+.prep:  mov     dword [zg_mat], BS_BARLIVEA
+        mov     eax, [BS_FRAMEA]
+        shl     eax, 12
+        push    eax
+        call    BS_SINA
+        add     esp, 4
+        fmul    dword [zg_pamp]
+        fadd    dword [zg_pbase]
+        fstp    dword [zg_h]
+        mov     dword [zg_ready], 1
         fld1
-        fsubrp  st1, st0            ; 1 - n / ZG_BEAM
         ret
-.empty: fldz
-        ret
-.full:  mov     dword [zg_mat], BS_BARONA
+.full:  mov     dword [zg_ready], 1
+        mov     dword [zg_mat], BS_BARONA
         fld1
         ret
 
-; Dash down on the laser out: zg_held 1, the swell's timer set, the sound
-; as it goes down; otherwise the timer runs down and the sound is armed.
+; The button, as a strip reads its weapon's (0x55d221): ready, the swell's
+; timer is cleared at once; else it runs down a frame, and Dash down on
+; it sets zg_held and the timer again, with the sound as it goes down
+; (the strips play it once while any timer is at ZG_SWELL, armed again
+; when none is). The press that fires the laser is read here too: held
+; on, it gets the block from the beam on, as a weapon's button held past
+; its shot's launch does.
 zg_press:
         mov     dword [zg_held], 0
-        cmp     dword [zg_mat], BS_BARONA
-        je      .up
+        cmp     dword [zg_ready], 0
+        jne     .ready
+        cmp     dword [zg_timer], 0
+        je      .button
+        dec     dword [zg_timer]
+.button:
         mov     eax, [ebp + 8]
         cmp     byte [eax + ZF_TURBOA], 0
         je      .up
@@ -4706,16 +4737,45 @@ zg_press:
         call    BS_SFX
         add     esp, 4
         ret
+.ready: mov     dword [zg_timer], 0
 .up:    mov     dword [zg_sounded], 0
-        cmp     dword [zg_timer], 0
-        je      .done
-        dec     dword [zg_timer]
 .done:  ret
 
 zg_full:  dd    0x42200000          ; 40.0, a full bar
-zg_fold:  dd    0x43820000          ; 260.0, the fold's frames
-zg_beamf: dd    0x42f00000          ; 120.0, ZG_BEAM
-zg_name:  db    'LASER CANNON', 0
+zg_cent:  dd    0x42c80000          ; 100.0
+zg_pamp:  dd    0x40400000          ; 3.0, the pulse's swing, as the strips'
+zg_pbase: dd    0x40c00000          ; 6.0, about this
+zg_name:  db    'CANNON', 0
+
+; --- Z-Gradt's weapons on the strips --------------------------------------
+
+; Z-Gradt's three shots are made outside the strips' heat counting, so
+; its bars stay full and a press on them shows nothing. While a weapon's
+; button is down on the player's Z-Gradt its strip is drawn in the live
+; bar's material (BS_BARLIVEA, a close-combat weapon's with the opponent
+; in reach) in place of the ready colour, at its usual height. The
+; button bytes (+0x138 right, +0x139 left, +0x13a both) are nonzero
+; while the button is down: 0xff as it goes down, counting down after,
+; 0 up. In place of each strip's push of the ready material before its
+; draw; ebp the strips' frame, [ebp+8] the object; eax and ecx free.
+%macro ZBAR 2                       ; label, the button's byte
+%1:
+        pop     ecx                 ; the return
+        push    BS_BARONA           ; the push in place of
+        cmp     dword [boss], ZGRADT
+        jne     %%out
+        mov     eax, [ebp + 8]
+        cmp     eax, BS_OBJA
+        jne     %%out
+        cmp     byte [eax + %2], 0
+        je      %%out
+        mov     dword [esp], BS_BARLIVEA
+%%out:  jmp     ecx
+%endmacro
+
+        ZBAR    zbar_ra, 0x138
+        ZBAR    zbar_la, 0x139
+        ZBAR    zbar_ba, 0x13a
 
 ; --- the replay and the win and lose screens -----------------------------
 
@@ -5161,6 +5221,7 @@ seltxt: SELTXT  'BAZOOKA', 'TRAP BOMB', '10 LASER', '', \
                 'LASER CANNON', 'ZUV-99-Z', BS_LOGOZ, 0x1a, 3
 sel_frx: dq     -87.0, -137.0       ; the frame's x as the game has it
 sel_rbin: db    0, 0                ; the slots pointed at sel_rbbuf
+sel_rbsave: dd  0, 0                ; and what they held
 selblank: times 16 db ' '
         times 4 db 0
 zmine:  dd      0                   ; the player posted Z-Gradt's event
@@ -5223,14 +5284,15 @@ bank_a: times AI_STATE db 0
         align   4, db 0
 scratch_a: times AI_STATE db 0
 
-zring: times RING_N * RING_SLOT db 0
-zg_beam: dd 0                      ; the beam's frames so far
+zring: times RING_N * RING_SLOT db 0  ; the KO replay's ring of the AI state
 zg_tmp:  dd 0
 zg_mat:  dd 0                      ; the gauge's material this frame
 zg_width: dd 0                     ; its width
 zg_held: dd 0                      ; Dash down on the laser out
 zg_timer: dd 0                     ; the swell's frames left
-zg_sounded: dd 0                   ; the refusal played for this press  ; the KO replay's ring of the AI state
+zg_sounded: dd 0                   ; the refusal played for this press
+zg_h: dd 0                         ; the bar's half height this frame
+zg_ready: dd 0                     ; the button answered
         align   4, db 0
 objsave: times OBJECT db 0
         align   4, db 0
