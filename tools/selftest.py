@@ -26,10 +26,10 @@ import sys
 # Everything ticked, per build: retail, the Japanese rerelease, the OEM,
 # the Japanese original.
 EXPECTED_ALL = {
-    'a464b0ff32d5bab499f265e45658504e': 'ad11a3124b517c948f772e3df73d46e4',
-    'd19320bdc3381a48228990907910a391': '96a32a179d3760ec1d06c3eb93f9a3da',
-    '4c70f780a7f0d98d74be62304fb99021': '3a2407bdc2e971f233bdec9c09c68af4',
-    '9764d946ffc8cee94788707c91753478': 'cbb404118b28a2fa958dc89babc257c8',
+    'a464b0ff32d5bab499f265e45658504e': '1b416b8006d43b9edab06eb1d1d9944e',
+    'd19320bdc3381a48228990907910a391': '6706282baf8052fcac2602b80730c3db',
+    '4c70f780a7f0d98d74be62304fb99021': '3b3da937c89c00cf30a8d0770c5b70bb',
+    '9764d946ffc8cee94788707c91753478': '36e3e4ab513d339abcb4a29691bf1ed2',
 }
 
 HERE = os.path.dirname(os.path.abspath(__file__))

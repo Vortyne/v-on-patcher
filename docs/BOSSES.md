@@ -107,7 +107,9 @@ unpatched game never reads it.
   in its select pose, as on its unlock screen, and Z-Gradt standing.
 - The scoreboard names them Z-GRADT and JAGUARANDI; the game's own table
   has them as Z-GRAT and JAGARANDI, which no one saw while they could not
-  be played.
+  be played. The attract's TODAY'S TOP OF WINS list, which takes the name
+  from the machine's model header, had Z-Gradt as ZIG-RAHT; it reads
+  Z-GRADT too.
 - The ending plays for a boss: Jaguarandi fires its own weapon at the moon
   gate and Z-Gradt its own charge and laser, then the text and the button
   wait. The staff roll is skipped: its battle-damaged model is one the
@@ -122,7 +124,12 @@ unpatched game never reads it.
 - The bosses' weapons have no ammo to speak of, as the game's own code
   has them: Z-Gradt's shots are made outside the charge counting, so its
   three gauges stay full, and Jaguarandi's refill faster than it can fire.
-  Its super laser has no gauge, as no machine has a fourth.
+- Z-Gradt's super laser has a gauge of its own, a fourth strip under the
+  three, named LASER CANNON as the hangar names it: full while the laser
+  is ready, red and draining as the beam fires, refilling as the cannon
+  folds away. Dash pressed while it is out gets what a weapon's button
+  gets on an empty gauge: CHARGING over the name, the refusal sound,
+  the bar swollen for a moment.
 - `bosses.bin` is written beside the game when a boss is unlocked. Where
   the folder cannot be written, the unlock screen still shows but the
   unlock is lost at exit.
@@ -148,9 +155,9 @@ in one player only. The sections below follow the file.
 The blob has a section of its own, `.vobs`, that the patcher appends only
 when the box is ticked, so unticked it leaves the executable as the other
 patches alone would. Its buffers - the bosses' motions, the model and AI
-copies, the replay's ring, the saved palettes and the rest, 263,181
+copies, the replay's ring, the saved palettes and the rest, 263,213
 bytes - are gathered at its end, and the file carries the blob only as
-far as its last byte that is not zero, 15,803 bytes; the rest is the
+far as its last byte that is not zero, 16,375 bytes; the rest is the
 section's virtual size, which Windows zeroes at load (`OWN_SECTIONS`).
 
 ### The select's row
@@ -282,6 +289,17 @@ with the texture bank the fights had loaded reloaded.
   laser. `zring_a` keeps those globals, the player's bank and the lock-on
   in a ring of its own, filled and read in step with the game's, at the
   twelve places object A is copied to or from the ring.
+- **Z-Gradt's laser gauge** - the HUD's three weapon strips are drawn by
+  one routine from the HUD pass, each a bar quad on the matrix scaled by
+  its fill, with its name in tiles. `zgauge_a`, at that routine's end,
+  stands a fourth at the middle strip's column one row down, filled from
+  the laser's state: full before the cannon fires, draining over the
+  beam's frames while the state holds at firing, refilling through the
+  fold, in the bars' colour when ready and red otherwise. While both
+  turbo bytes are down on the laser out, it puts the strips' CHARGING
+  block over the name through the game's own routine for the three,
+  plays the refusal sound once per press and swells the bar for thirty
+  frames; with the button up it clears the block and prints the name.
 - **Jaguarandi's red segments** - the renderer draws a frame's polygons
   nearest first, each keeping the pixels it covers, by a key a polygon:
   the depth of its nearest vertex, in buckets 1/256th of the depth wide,

@@ -803,8 +803,8 @@ turntable; the unlocks, their screen and `bosses.bin`; the round's
 animation loads; the ending; Z-Gradt's chase camera; the player's
 Z-Gradt - its fly-in, its laser's button, its floor - and Z-Gradt against
 Z-Gradt, where the player's gets its own model header and AI state;
-Z-Gradt's gold; the KO replay's ring; Jaguarandi's red segments; the
-replay and the win and lose screens. The data is at the end, the zeroed buffers
+Z-Gradt's gold; the KO replay's ring; Jaguarandi's red segments; Z-Gradt's
+laser gauge; the replay and the win and lose screens. The data is at the end, the zeroed buffers
 last so the file carries none of them.
 
 Every hook is player 1's copy of the fight machine's (`A` in the names,
