@@ -3470,8 +3470,6 @@ JPRE = Build('Japanese rerelease', 'jpre', JPRE_MD5, JPRE_SIZE, 0x345107fa,
     'BS_BARONA': 0x0078d800,
     'BS_BARREDA': 0x0078d860,
     'BS_BARLIVEA': 0x0078d8e0,       # the live bar's, pulsing
-    'BS_FRAMEA': 0x01adb8d4,       # the frame counter
-    'BS_SINA': 0x00408950,
     'BS_CHARGEA': 0x004cda0d,
     'BS_RFLAG': 0x006bb2bc,
     'BS_MATA': 0x01ae0ef0,
@@ -3854,7 +3852,6 @@ OEM = Build('USA OEM', 'oem', OEM_MD5, OEM_SIZE, 0x3317246a, sections=(
     'BS_BARONA': 0x00791a30,
     'BS_BARREDA': 0x00791a90,
     'BS_BARLIVEA': 0x00791b10,       # the live bar's, pulsing
-    'BS_FRAMEA': 0x01ae3530,       # the frame counter
     'BS_CHARGEA': 0x004cfd23,
     'BS_RFLAG': 0x006bf53c,
     'BS_MATA': 0x01ae6170,
@@ -4238,7 +4235,6 @@ JP = Build('Japanese original', 'jp', JP_MD5, JP_SIZE,
     'BS_BARONA': 0x007907a0,
     'BS_BARREDA': 0x00790800,
     'BS_BARLIVEA': 0x00790880,       # the live bar's, pulsing
-    'BS_FRAMEA': 0x01ae20c0,       # the frame counter
     'BS_CHARGEA': 0x004cfe03,
     'BS_RFLAG': 0x006be29c,
     'BS_MATA': 0x01ae4d00,
@@ -18760,11 +18756,12 @@ FEATURES = [
          # The outside in sight as soon as Z-Gradt gets there.
          (0x0019d413, 'a1780aad01', call(0x0019d413, ('BOSSES', 'selsky_a'))),
          # The bosses' weapons named in battle, as on the select - right,
-         # left, both - in each side's data; Jaguarandi's as the Sega Ages
+         # left, both - in each side's data: Jaguarandi's as the Sega Ages
          # release names them, Z-Gradt's after the eight's, F MINE as the
-         # game shortens Bal-Bas-Bow's (the strips fit ten letters; its
-         # laser cannon is on no button); Z-Gradt's name in its headers, ZIG-RAHT
-         # as shipped, which the attract's TODAY'S TOP OF WINS prints.
+         # game shortens Bal-Bas-Bow's (a strip fits ten letters; its laser
+         # cannon is on no button). Then Z-Gradt's name in its headers,
+         # ZIG-RAHT as shipped, which the attract's TODAY'S TOP OF WINS
+         # prints.
          (0x0023b5d4, '522d574541504f4e00000000000000004c2d574541504f4e0000000000000000524c2d574541504f4e00000000000000',
           '42415a4f4f4b410000000000000000005452415020424f4d42000000000000003130204c415345520000000000000000'),
          (0x0023bca4, '522d574541504f4e00000000000000004c2d574541504f4e0000000000000000524c2d574541504f4e00000000000000',
@@ -20758,8 +20755,8 @@ def apply_annex(buf, build, wanted):
 
     The build's own sections follow, each only when its patch is wanted,
     empty too: the blob's bytes up to its last that is not zero, the rest
-    virtual. Nothing else has
-    been appended yet, so they land where own_place() says."""
+    virtual. Nothing else has been appended yet, so they land where
+    own_place() says."""
     va, raw, _names = build.annex
     _layout, length = annex_layout(build)
     pe = _PE(buf)

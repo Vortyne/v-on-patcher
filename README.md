@@ -237,17 +237,9 @@ The offsets and internals of every patch are in [NOTES.md](docs/NOTES.md).
       for a second. Stock has no way past them
     - the initials screen after them takes those buttons too, and either
       weapon trigger. A and Select are 1P's, so 2P skips with **RT**
-- **Playable bosses** - Jaguarandi and Z-Gradt in a one-player game, once
-  unlocked. Beat Jaguarandi on Very Hard without losing a match in the run
-  and it joins the machine select; finish the game the same way after that
-  and Z-Gradt joins too. Each unlock gets a screen of its own, and they are
-  kept in `bosses.bin` beside the game. An unlocked boss stands in the row
-  after Raiden with a portrait of its own (the row moves left to make room)
-  and the countdown runs 20 seconds longer. With Machine Color Select on, a
-  boss can wear any of the colours. The report after stage 5 turns the boss
-  itself. One player only, on purpose - they are too strong for a fair
-  two-player fight. Unticked by default. The whole of it is in
-  [BOSSES.md](docs/BOSSES.md).
+- **Playable bosses** - Jaguarandi and Z-Gradt as machines you can pick in
+  a one-player game, once earned. See [Playable bosses](#playable-bosses).
+  Unticked by default.
 - **Pre-unlock the bosses** - both bosses selectable from the start: writes
   `bosses.bin` with both unlocked. Needs Playable bosses, never lowers
   progress already made, and is left alone by **Restore original**.
@@ -338,6 +330,54 @@ stretching.
 It applies to all four [builds](#builds). On the USA OEM and Japanese
 builds it is newer and has had less play; if something looks wrong there,
 say which build in the report - the window names it.
+
+## Playable bosses
+
+Jaguarandi and Z-Gradt are the game's two bosses. This patch lets you play
+as them in a one-player game. The game already knows how to run them as
+fighters. What it never had was a way to pick them. The patch adds them to
+the machine select, fits the camera and the hangar to their size, and
+fixes every screen the game drew for the eight only.
+
+<!-- pictures: the select with both bosses in the row, an unlock screen,
+     Jaguarandi in a match, Z-Gradt firing its laser with the gauge -->
+
+It is **unticked by default**, because it changes the game rather than
+fixes it. **Pre-unlock the bosses** beside it skips the earning.
+
+### Unlocking
+
+- **Jaguarandi** - beat it on Very Hard without losing a match earlier in
+  the run.
+- **Z-Gradt** - once Jaguarandi is unlocked, finish the game on Very Hard
+  without losing a match.
+
+A continue counts as a lost match. Each unlock gets a screen of its own.
+Both are saved in `bosses.bin` next to the game and survive restarts and
+re-patching.
+
+### What changes
+
+- **Machine select** - an unlocked boss stands in the row after Raiden
+  with its own portrait. The row moves left to make room. The countdown
+  runs 20 seconds longer. The Quick VR Select has them too. With Machine
+  Color Select on, a boss can wear any of the eight's colours.
+- **In a match** - each boss fights with its own weapons. The HUD names
+  Jaguarandi's as the Sega Ages release does. Z-Gradt fires its super
+  laser with Dash and has a fourth gauge for it under the other three.
+  Z-Gradt cannot jump, so the jump button turns it to face the opponent
+  instead. The chase camera stands further back to fit them, and so do the
+  KO replay and the win shots.
+- **Elsewhere** - the Player Data Report shows the boss itself. The ending
+  plays with it. The scoreboard spells both names correctly; the game's
+  own table had them as Z-GRAT and JAGARANDI.
+
+### Works with everything else
+
+It works with every other patch, on all four [builds](#builds), and with
+cnc-ddraw. It is one player only, on purpose: the bosses are far stronger
+than the eight, so two-player and internet play keep the select to the
+eight and are untouched. [BOSSES.md](docs/BOSSES.md) has the full account.
 
 ## Gamepad
 
@@ -710,9 +750,13 @@ unpatched game do not fit the new device list. The title artwork -
 `escrgame.bin`, or `jscrgame.bin` on the Japanese builds - is rewritten
 with the new title prompt, after a copy is kept as `.bak`.
 
+**Playable bosses** writes the bosses' portraits into the same artwork
+file, backed up the same way, and **Pre-unlock the bosses** writes
+`bosses.bin` beside the game, which **Restore original** leaves alone.
+
 Every run appends a section to `v_on.exe` for the patch code, and
-**No disc required**, **Disable menu bar** and **Native widescreen** each
-add one more; nothing else on disk changes.
+**No disc required**, **Disable menu bar**, **Native widescreen** and
+**Playable bosses** each add one more; nothing else on disk changes.
 
 **Restore original** puts every backed-up file back - those three and the
 two roll files the credit line rewrites - keeping whatever the patched game

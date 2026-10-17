@@ -756,28 +756,31 @@ v-on-patcher.py between the PORT TABLES markers.
 
 ### Playable bosses
 
-Lives in asm/bosses.asm, one blob in a section of its own, `.vobs`, that
-the patcher appends only when the box is ticked, so an unticked run leaves
-the executable as the other patches alone would. The game already runs the
-bosses as fight objects - the initials demo fights 8 against 9 - and the
-patch is one hook at each place the game only ever did with the eight:
-the select's row and its tables (eight long, made ten), the palette
-loaders (ids above 7 sent to a fixed table), the report's turntable, the
-round's animation loads, the ending, the win and replay cameras, and
-Z-Gradt against Z-Gradt on the last stage, where both share one model
-header and one block of AI state and the player's gets a copy of each
-(the state is a run of globals from `BS_BSSA`, `BS_AIDW` dwords long, the
-seven the patch sets at the build's own offsets, `BS_AI*`: the rerelease
-lays them out apart from the other three). A
-one-player game runs on player 1's copy of the fight machine only (the
-other's tick, `0x40f528`, is called from the loop's two-player branch
-alone), so every hook is that copy's. Whether the player is a boss is one
-flag, `boss`, set at confirm in one player only.
+Lives in asm/bosses.asm, one blob in a section of its own, `.vobs`. The
+patcher appends the section only when the box is ticked. An unticked run
+leaves the executable as the other patches alone would.
+
+The game already runs the bosses as fight objects: the initials demo
+fights 8 against 9. The patch is one hook at each place the game only
+ever did with the eight. Those are the select's row and its tables (eight
+long, made ten), the palette loaders (ids above 7 sent to a fixed table),
+the report's turntable, the round's animation loads, the ending, the win
+and replay cameras, and Z-Gradt against Z-Gradt on the last stage. On
+that stage both share one model header and one block of AI state, so the
+player's gets a copy of each. The state is a run of globals from
+`BS_BSSA`, `BS_AIDW` dwords long. The seven the patch sets are at the
+build's own offsets, `BS_AI*`, because the rerelease lays them out apart
+from the other three.
+
+A one-player game runs on player 1's copy of the fight machine only. The
+other copy's tick, `0x40f528`, is called from the loop's two-player
+branch alone. So every hook is player 1's. Whether the player is a boss
+is one flag, `boss`, set at confirm in one player only.
 
 The unlocks are kept in `bosses.bin` beside the game, a dword: 0 none, 1
 Jaguarandi, 2 both. The select's portraits of the bosses are tiles in
-`escrgame.bin`, written with the title banner's (`BOSS_ICON_TILES`),
-drawn from assets/portrait_*.png by tools/portraits.py. The select draws
-a boss in two palette rows the select leaves alone, saved as it opens and
-put back as a launch starts; how the game picks a palette row, and the
-rest of the design, is in docs/BOSSES.md.
+`escrgame.bin`, written with the title banner's (`BOSS_ICON_TILES`). They
+are drawn from assets/portrait_*.png by tools/portraits.py. The select
+draws a boss in two palette rows it leaves alone otherwise, saved as it
+opens and put back as a launch starts. How the game picks a palette row,
+and the rest of the design, is in docs/BOSSES.md.

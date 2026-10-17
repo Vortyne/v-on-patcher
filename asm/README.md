@@ -789,32 +789,39 @@ pairs of projection slots. How it was found is in
 ## bosses.asm
 
 Jaguarandi and Z-Gradt as the player's machine in a one-player game, once
-unlocked: two more places in the select's row, and a hook at each place
-the game only handled the eight. Player's guide and design in
-[BOSSES.md](../docs/BOSSES.md).
+unlocked. The select's row gets two more places, and every place the game
+handled the eight alone gets a hook. The player's guide and the design
+are in [BOSSES.md](../docs/BOSSES.md).
 
-The file is in sections, each a hook or a few: the per-frame tick from
-the loop's idle call, which follows the select and keeps the flag `boss`;
-confirm; the select's row, its tables made ten long and the bosses' own
-select models, posed from their fight models; the select's palettes,
-where a boss borrows two rows the select leaves alone; the portraits,
-marks and frame shifted left; the palette loaders; PLAYER DATA's
-turntable; the unlocks, their screen and `bosses.bin`; the round's
-animation loads; the ending; Z-Gradt's chase camera; the player's
-Z-Gradt - its fly-in, its laser's button, its floor - and Z-Gradt against
-Z-Gradt, where the player's gets its own model header and AI state;
-Z-Gradt's gold; the KO replay's ring; Jaguarandi's red segments; Z-Gradt's
-laser gauge; Z-Gradt's weapons on the strips; the replay and the win and lose screens. The data is at the end, the zeroed buffers
-last so the file carries none of them.
+The file is in sections, each a hook or a few, in this order:
 
-Every hook is player 1's copy of the fight machine's (`A` in the names,
-as [HIRES.md](../docs/HIRES.md) letters the renderers): the other copy's
+- the per-frame tick from the loop's idle call, which follows the select
+  and keeps the flag `boss`, and confirm
+- the select: its row, its tables made ten long, the bosses' own select
+  models posed from their fight models, the palettes (a boss borrows two
+  rows the select leaves alone), and the portraits, marks and frame
+  shifted left
+- the palette loaders, PLAYER DATA's turntable, the unlocks with their
+  screen and `bosses.bin`, the round's animation loads, and the ending
+- Z-Gradt's chase camera; the player's Z-Gradt - its fly-in, its laser's
+  button, its floor - and Z-Gradt against Z-Gradt, where the player's
+  gets its own model header and AI state; Z-Gradt's gold
+- the KO replay's ring, Jaguarandi's red segments, Z-Gradt's laser gauge
+  and its weapons on the strips, and the replay and the win and lose
+  screens
+
+The data is at the end, the zeroed buffers last so the file carries none
+of them.
+
+Every hook is in player 1's copy of the fight machine, `A` in the names,
+as [HIRES.md](../docs/HIRES.md) letters the renderers. The other copy's
 tick is only called in the loop's two-player branch, and the bosses are
-one player only. Hooks that replace more than one instruction replay what
-they displaced, and the ones in code every machine runs - the polygon
-queue, load identity, the shadow draws - test `boss` first and fall
-through to the original otherwise; the replay's ring alone keeps
-Z-Gradt's AI globals in every fight, whoever is in it.
+one player only. A hook that replaces more than one instruction replays
+what it displaced. The hooks in code every machine runs, the polygon
+queue, load identity and the shadow draws, test `boss` first and fall
+through to the original otherwise. The replay's ring is the one
+exception: it keeps Z-Gradt's AI globals in every fight, whoever is in
+it.
 
 ## titlever.asm
 

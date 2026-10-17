@@ -408,6 +408,9 @@ well-formed and wrong on one build only:
 - a match to the win screen, and the replay after it
 - the F5, F7 and F11 dialogs, and a deadzone edit that survives a restart
 - the ending credits and the initials screen after them
+- with **Playable bosses** on, a game as each boss: the select, a match
+  to the win screen and its replay, a continue, and the unlock screens
+  with `bosses.bin` deleted first
 - the pad's soft reset, from a match and from a two-player match, since it
   runs the game's own teardown from wherever you are
 - one matchcode match against a second machine, direct and forced through
