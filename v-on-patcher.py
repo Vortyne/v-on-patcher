@@ -21226,14 +21226,16 @@ class Patcher:
         """Both bosses unlocked in bosses.bin, the dword the bosses patch
         keeps its progress in (0 none, 1 Jaguarandi, 2 both). The player's
         progress, so no backup and nothing put back on restore - the
-        unpatched game never reads it - and never lowered."""
+        unpatched game never reads it - and never lowered. A value above 2
+        is not progress: the blob's unl_load reads it as none, so it is
+        written over like a 0."""
         path = os.path.join(os.path.dirname(self.exe_path), BOSSES_FILE)
         try:
             with open(path, 'rb') as fh:
                 have = int.from_bytes(fh.read(4).ljust(4, b'\0'), 'little')
         except OSError:
             have = 0
-        if have >= BOSSES_ALL:
+        if have == BOSSES_ALL:
             log.append('patch: %s already has both bosses unlocked'
                        % BOSSES_FILE)
             return

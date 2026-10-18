@@ -40,9 +40,9 @@ is stale, so the line numbers are current.
 | 18149–19188 | the patch table: `FEATURES`, `BY_KEY`, labels, tips, apply order | `FEATURES = [` |
 | 19189–20036 | ripping (`RAW = 2352`) and installing (`LOGICAL = 2048`) | `# --- ripping --------------` |
 | 20037–20885 | netplay setup, `SYNC_SITES`, cnc-ddraw, CD audio | `# --- netplay --------------` |
-| 20886–21408 | `Patcher`: reading a file, applying, restoring | `class Patcher:` |
-| 21409–21976 | the logo and icon (`tools/assets.py`), then the window strings | `# ASSETS BLOB BEGIN - tools/` |
-| 21977–24008 | the window (`run_tk`), the CLI, `main` | `def run_tk():` |
+| 20886–21410 | `Patcher`: reading a file, applying, restoring | `class Patcher:` |
+| 21411–21978 | the logo and icon (`tools/assets.py`), then the window strings | `# ASSETS BLOB BEGIN - tools/` |
+| 21979–24010 | the window (`run_tk`), the CLI, `main` | `def run_tk():` |
 <!-- REGIONS END -->
 
 ## 3. `v_on.exe`
@@ -140,9 +140,9 @@ first is there on every run, the other four only with their patch.
 | --- | --- | --- | --- | --- |
 | `.vojp` | `0x36b5000` | `0x1400` | every run | the annex: every blob but the three below, in `ANNEX_BLOBS` order |
 | `.vobs` | `0x36b7000` | `0x444f8` | Playable bosses | `bosses.asm`, its code and tables, then its buffers (virtual, not on disk) |
-| `.voxt` | `0x36f4000` | `0x40c` | Disable menu bar | the F11 dialog template, then `voxt.asm` |
-| `.vocd` | `0x36f5000` | `0xbac` | No disc required | `vocd.asm` and its track table |
-| `.vohr` | `0x36f6000` | `0x4f0830` | Native widescreen | `UI_CODE`, the mask spans, the row table, the polygon pool, then the off-screen canvas (virtual, not on disk) |
+| `.voxt` | `0x36fc000` | `0x40c` | Disable menu bar | the F11 dialog template, then `voxt.asm` |
+| `.vocd` | `0x36fd000` | `0xbac` | No disc required | `vocd.asm` and its track table |
+| `.vohr` | `0x36fe000` | `0x4f0830` | Native widescreen | `UI_CODE`, the mask spans, the row table, the polygon pool, then the off-screen canvas (virtual, not on disk) |
 
 The annex, blob by blob:
 
@@ -188,4 +188,4 @@ within 16 KB of each other.
 | sound | 5 | `0x458d89`, `0x5719c9`, `0x58a146–0x58a152`, `0x6bcc60` |
 | movie | 10 | the PE header, `0x4d6cc8`, `0x54e842`, `0x590825`, `0x5c64e7`, `0x6c8878`, the annex |
 | credits | 5 | `0x5c6500`, `.rdata 0x5fdac8`, `0x6bcd54`, the annex |
-| bosses | 170 | 19 runs from `0x404db7` to `0x5e0254`, `.rdata 0x5ff238` and `0x63c1d4–0x63e084` (the bosses' weapon names), `.data 0x6bc208` (the scoreboard's), plus its section |
+| bosses | 173 | 19 runs from `0x404db7` to `0x5e0254`, `.rdata 0x5ff238` and `0x63c1d4–0x63e084` (the bosses' weapon names), `.data 0x6bc208` (the scoreboard's), plus its section |
