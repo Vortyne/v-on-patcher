@@ -339,8 +339,10 @@ fighters. What it never had was a way to pick them. The patch adds them to
 the machine select, fits the camera and the hangar to their size, and
 fixes every screen the game drew for the eight only.
 
-<!-- pictures: the select with both bosses in the row, an unlock screen,
-     Jaguarandi in a match, Z-Gradt firing its laser with the gauge -->
+<p align="center">
+  <img src="assets/readme/select-jaguarandi.png" alt="Machine select with Jaguarandi chosen, both bosses in the row" width="49.5%" />
+  <img src="assets/readme/select-z-gradt.png" alt="Machine select with Z-Gradt chosen" width="49.5%" />
+</p>
 
 It is **unticked by default**, because it changes the game rather than
 fixes it. **Pre-unlock the bosses** beside it skips the earning.
@@ -355,6 +357,11 @@ fixes it. **Pre-unlock the bosses** beside it skips the earning.
 A continue counts as a lost match. Each unlock gets a screen of its own.
 Both are saved in `bosses.bin` next to the game and survive restarts and
 re-patching.
+
+<p align="center">
+  <img src="assets/readme/unlock-jaguarandi.png" alt="The unlock screen for Jaguarandi" width="49.5%" />
+  <img src="assets/readme/unlock-z-gradt.png" alt="The unlock screen for Z-Gradt" width="49.5%" />
+</p>
 
 ### What changes
 
@@ -371,6 +378,11 @@ re-patching.
 - **Elsewhere** - the Player Data Report shows the boss itself. The ending
   plays with it. The scoreboard spells both names correctly; the game's
   own table had them as Z-GRAT and JAGARANDI.
+
+<p align="center">
+  <img src="assets/readme/match-jaguarandi.png" alt="Jaguarandi in a match against Z-Gradt" width="49.5%" />
+  <img src="assets/readme/laser-z-gradt.png" alt="Z-Gradt firing its laser cannon, the fourth gauge under the three" width="49.5%" />
+</p>
 
 ### Works with everything else
 
