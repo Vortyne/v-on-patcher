@@ -12,18 +12,18 @@ and two-player versus over the internet with a code to share - no port
 forwarding.
 
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/464143ee-a63b-4004-83f5-16cf28c146dd" alt="Widescreen match" width="49.5%" />
-  <img src="https://github.com/user-attachments/assets/eaa35047-e49a-4ca9-8ff1-9cb7e1d8a07f" alt="Widescreen title screen" width="49.5%" />
+  <img src="assets/readme/widescreen-match.png" alt="Widescreen match" width="49.5%" />
+  <img src="assets/readme/widescreen-title.png" alt="Widescreen title screen" width="49.5%" />
 </p>
 
-<img src="https://github.com/user-attachments/assets/3f1e19b6-406d-4a80-8a0c-e2fd9f0ffdea" alt="Widescreen ending cutscene: Temjin over the Earth and the Moon" width="100%" />
+<img src="assets/readme/widescreen-ending.png" alt="Widescreen ending cutscene: Temjin over the Earth and the Moon" width="100%" />
 
 <p align="center">
   ...in a nutshell - the patch makes the game <i>just work ™️</i>
 </p>
 
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/e7273d44-0968-4864-8f37-5d3b899cc50d" alt="The patcher window" height="700" />
+  <img src="assets/readme/patcher-window.png" alt="The patcher window" height="700" />
 </p>
 
 <h4 align="center">
@@ -99,7 +99,7 @@ The patcher reads the image itself, so there is nothing to mount and no
 virtual drive to set up.
 
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/d03430cf-4ef4-4ff8-bf8d-e608d5049be5" alt="INSTALL section" height="280" />
+  <img src="assets/readme/install-section.png" alt="INSTALL section" height="280" />
 </p>
 
 Put the **`.cue`** sheet in **Source** - the small file beside the `.bin`
@@ -154,7 +154,7 @@ For how the copy rules are read off the disc, see
 ## What the patches do
 
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/15fdc7a1-c52e-4565-8977-6ac024229f4f" alt="Patched game" height="160" />
+  <img src="assets/readme/patched-game.png" alt="Patched game" height="160" />
 </p>
 
 **Essential** fixes what is broken on modern systems and is always applied.
@@ -262,7 +262,7 @@ Open the collapsed **ADD-ONS** header and press **Install** on a row. The
 same button reads **Remove** once installed.
 
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/314b5279-9e61-4899-8cef-d5f40e0a65d7" alt="ADD-ONS section" height="360" />
+  <img src="assets/readme/add-ons-section.png" alt="ADD-ONS section" height="360" />
 </p>
 
 | Row | What it is |
@@ -282,14 +282,14 @@ all drawn at that size, and the wider view shows more of the arena at the
 sides rather than stretching the middle.
 
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/b4026e8a-39d6-4fe2-9f6f-275e5c2c4545" alt="Widescreen match, 1P" width="49.5%" />
-  <img src="https://github.com/user-attachments/assets/2118e335-366e-4f2a-b332-f9fca25ce4ac" alt="Widescreen machine select" width="49.5%" />
+  <img src="assets/readme/widescreen-match-1p.png" alt="Widescreen match, 1P" width="49.5%" />
+  <img src="assets/readme/widescreen-machine-select.png" alt="Widescreen machine select" width="49.5%" />
   <br />
-  <img src="https://github.com/user-attachments/assets/4fa56492-db68-4a9b-92b7-a2724adf0bef" alt="Widescreen split screen" width="49.5%" />
-  <img src="https://github.com/user-attachments/assets/dc17fcbd-5898-4ca5-907e-865024d2d509" alt="Widescreen menu" width="49.5%" />
+  <img src="assets/readme/widescreen-split-screen.png" alt="Widescreen split screen" width="49.5%" />
+  <img src="assets/readme/widescreen-menu.png" alt="Widescreen menu" width="49.5%" />
   <br />
-  <img src="https://github.com/user-attachments/assets/f5ccbf1a-fca8-47c0-9c43-cd41c13f6f6c" alt="Widescreen NEXT ENEMY screen" width="49.5%" />
-  <img src="https://github.com/user-attachments/assets/690d6e7c-e480-4144-bc3d-f4a8be750c62" alt="Widescreen two-player machine select" width="49.5%" />
+  <img src="assets/readme/widescreen-next-enemy.png" alt="Widescreen NEXT ENEMY screen" width="49.5%" />
+  <img src="assets/readme/widescreen-2p-machine-select.png" alt="Widescreen two-player machine select" width="49.5%" />
 </p>
 
 It is **on by default**, like the other Extra patches. Untick it for the
@@ -389,8 +389,8 @@ two pads, the first drives 1P and the second 2P. With one pad and 1P on the
 keyboard, that pad drives 2P.
 
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/457643b7-f42b-49b2-993f-50b56733c59d" alt="F7 device list with the four profiles" width="350" />
-  <img src="https://github.com/user-attachments/assets/9fac5899-0465-4fbe-990f-65f978352632" alt="F7 bind page for Gamepad (XInput)" width="350" />
+  <img src="assets/readme/f7-device-list.png" alt="F7 device list with the four profiles" width="350" />
+  <img src="assets/readme/f7-bind-page.png" alt="F7 bind page for Gamepad (XInput)" width="350" />
 </p>
 
 | Profile | What it is |
@@ -419,8 +419,8 @@ movement binds, which is what the menus read.
 the game ignores F3 while the movie plays.
 
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/6f6443ba-1ea2-45f3-a012-88df008d7e39" alt="Pause screen prompt" width="49.5%" />
-  <img src="https://github.com/user-attachments/assets/dd50a0dd-a98e-4054-8ec1-96d6160b4f07" alt="Title screen prompt" width="49.5%" />
+  <img src="assets/readme/pause-prompt.png" alt="Pause screen prompt" width="49.5%" />
+  <img src="assets/readme/title-prompt.png" alt="Title screen prompt" width="49.5%" />
 </p>
 
 The on-screen prompts follow the pad: the pause screen reads **PRESS START
@@ -477,7 +477,7 @@ you are editing.
 ### Stick deadzone
 
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/a2482765-37bc-46d3-8763-4923c8e5449b" alt="F11 Extras dialog" height="270" />
+  <img src="assets/readme/f11-extras.png" alt="F11 Extras dialog" height="270" />
 </p>
 
 How far a stick has to move before it counts. It is 40% out of the box, set
@@ -507,7 +507,7 @@ player hosts and gets a short code, the other types it in. No port
 forwarding, no VPN. Direct IP is still there for LAN play.
 
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/aab7d268-e9f5-47bb-810c-83b183f253e5" alt="Internet play dialog" height="360" />
+  <img src="assets/readme/internet-play.png" alt="Internet play dialog" height="360" />
 </p>
 
 ### Before you start
@@ -655,7 +655,7 @@ That part is between the game and the graphics driver, and it is what
 cnc-ddraw is for.
 
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/ee0e5c12-2db3-4a85-bc23-8ba4d859c6ce" alt="cnc-ddraw row under ADD-ONS" height="360" />
+  <img src="assets/readme/cnc-ddraw-row.png" alt="cnc-ddraw row under ADD-ONS" height="360" />
 </p>
 
 [cnc-ddraw](https://github.com/FunkyFr3sh/cnc-ddraw) replaces the DirectDraw

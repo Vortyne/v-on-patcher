@@ -387,7 +387,11 @@ feed each other. The README's *Virus warnings* section tells users how to
 allow it in Defender meanwhile.
 
 `--generate-notes` writes the release body from commit subjects, which for a
-squashed history is close to useless. Replace it once CI is green:
+squashed history is close to useless. Replace it once CI is green: the
+logo, then sections named for what their bullets are (*Added* first,
+*Changed* and *Fixed* when there is something for them), in plain words,
+saying only what has been seen. Requirements and known issues stay in the
+README.
 
 ```bash
 gh release edit v0.8.4 --notes-file notes.md
